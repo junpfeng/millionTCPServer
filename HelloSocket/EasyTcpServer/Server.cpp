@@ -7,7 +7,12 @@
 #include<WinSock2.h>
 
 
-
+// 定义结构化数据结构体
+// 注意点：1.客户端和服务器要保证系统位数相同，2.字节序相同
+struct DataPackage {
+	int age;
+	char name[32];
+};
 
 int main() {
 	// Windows 网络开发框架
@@ -43,21 +48,45 @@ int main() {
 	SOCKET _cSock = INVALID_SOCKET;
 	//accept(_sock, (sockaddr*)&clientAddr, &nAddrLen);
 	char msgBUF[] = "hello, lam server.";
+
+	_cSock = accept(_sock, (sockaddr*)&clientAddr, &nAddrLen);
+	if (INVALID_SOCKET == _cSock) {
+		printf("invalid client socket\n");
+	}
+	printf("新客户端IP: = %s \n", inet_ntoa(clientAddr.sin_addr));
+
+	char _recvBUF[128] = {};
 	while (true) {
-		_cSock = accept(_sock, (sockaddr*)&clientAddr, &nAddrLen);
-		if (INVALID_SOCKET == _cSock) {
-			printf("invalid client socket\n");
+		
+		// 5.接受客户端数据
+		int nlen = recv(_cSock, _recvBUF, 128, 0);
+		if (nlen <= 0) {
+			printf("client quit\n");
+			break;
 		}
-		printf("新客户端IP: = %s \n", inet_ntoa(clientAddr.sin_addr));
-		// 5. 给客户端发送数据
-		send(_cSock, msgBUF, strlen(msgBUF) + 1, 0);
+
+		printf("接收到的消息%s\n", _recvBUF);
+		// 6.处理请求
+		if (0 == strcmp(_recvBUF, "getInfo")) {
+			// 7 send 给客户端发送数据
+			DataPackage dp = { 80, "junpfeng" };
+			// 这里将结构体转为 字符串 也说明了，类和普通类型之间可以强转
+			send(_cSock, (const char *)&dp, strlen(msgBUF) + 1, 0);
+		}else {
+			char msgBUF[] = "hello, lam server. what did you send?";
+			// 7. 给客户端发送数据
+			send(_cSock, msgBUF, strlen(msgBUF) + 1, 0);
+		}
+		
 	}
 
-	// 6. 关闭套接字
+	// 8. 关闭套接字
 	closesocket(_sock);
 
 	// -------------------------
 	// Windows网络开发框架
 	WSACleanup();
+	printf("quit\n");
+	getchar();
 	return 0;
 }
