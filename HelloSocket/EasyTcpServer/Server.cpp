@@ -14,6 +14,50 @@ struct DataPackage {
 	char name[32];
 };
 
+// 定义正式的数据包
+enum CMD {  // 定义数据类型
+	CMD_LOGIN,
+	CMD_LOGIN_RESULT,
+	CMD_LOGOUT,
+	CMD_LOGOUT_RESULT,
+	CMD_ERROR
+};
+struct DataHeader {  // 作为所有数据报文的基类
+	CMD cmd;
+	short dataLength;  // 数据长度一般不大于 65535
+};
+struct Login :public DataHeader {  // 登录
+	Login() {
+		dataLength = sizeof(Login);
+		cmd = CMD_LOGIN;
+	}
+	char userName[32];
+	char PassWord[32];
+};
+struct LoginResult :public DataHeader {  //登录结果
+	LoginResult() {
+		dataLength = sizeof(LoginResult);
+		cmd = CMD_LOGIN_RESULT;
+		result = 0;
+	}
+	int result;
+};
+struct Logout :public DataHeader { // 登出
+	Logout() {
+		dataLength = sizeof(Logout);
+		cmd = CMD_LOGOUT;
+	}
+	char userName[32];
+};
+struct LogoutResult :public DataHeader {  //登出结果
+	LogoutResult() {
+		dataLength = sizeof(LogoutResult);
+		cmd = CMD_LOGOUT_RESULT;
+		result = 0;
+	}
+	int result;
+};
+
 int main() {
 	// Windows 网络开发框架
 	WORD ver = MAKEWORD(2, 2);
@@ -46,7 +90,6 @@ int main() {
 	sockaddr_in clientAddr = {};
 	int nAddrLen = sizeof(sockaddr_in);
 	SOCKET _cSock = INVALID_SOCKET;
-	//accept(_sock, (sockaddr*)&clientAddr, &nAddrLen);
 	char msgBUF[] = "hello, lam server.";
 
 	_cSock = accept(_sock, (sockaddr*)&clientAddr, &nAddrLen);
@@ -55,29 +98,41 @@ int main() {
 	}
 	printf("新客户端IP: = %s \n", inet_ntoa(clientAddr.sin_addr));
 
-	char _recvBUF[128] = {};
 	while (true) {
-		
+		DataHeader header;
 		// 5.接受客户端数据
-		int nlen = recv(_cSock, _recvBUF, 128, 0);
+		int nlen = recv(_cSock, (char*)&header, sizeof(header), 0);
 		if (nlen <= 0) {
 			printf("client quit\n");
 			break;
 		}
-
-		printf("接收到的消息%s\n", _recvBUF);
-		// 6.处理请求
-		if (0 == strcmp(_recvBUF, "getInfo")) {
-			// 7 send 给客户端发送数据
-			DataPackage dp = { 80, "junpfeng" };
-			// 这里将结构体转为 字符串 也说明了，类和普通类型之间可以强转
-			send(_cSock, (const char *)&dp, strlen(msgBUF) + 1, 0);
-		}else {
-			char msgBUF[] = "hello, lam server. what did you send?";
-			// 7. 给客户端发送数据
-			send(_cSock, msgBUF, strlen(msgBUF) + 1, 0);
+		// 解析数据头
+		//printf("收到命令：%d 数据长度 %d\n", header.cmd, header.dataLength);
+		switch (header.cmd)
+		{
+			case CMD_LOGIN: {
+				Login login;
+				// 报文头前面已经收到了，这里要进行地址偏移。下同。
+				recv(_cSock, (char*)&login + sizeof(header), sizeof(Login) - sizeof(header), 0);
+				printf("收到命令:CMD_LOGIN, 数据长度:%d, usrname = %s, passwd = %s\n", login.dataLength, login.userName, login.PassWord);
+				// 判断用户密码
+				LoginResult ret; 
+				send(_cSock, (char*)&ret, sizeof(LoginResult), 0);
+			}
+			break;
+			case CMD_LOGOUT: 
+			{
+				Logout logout;
+				recv(_cSock, (char*)&logout + sizeof(header), sizeof(Logout) - sizeof(header), 0);
+				LogoutResult ret;
+				send(_cSock, (char*)&ret, sizeof(ret), 0);
+			}break;
+			default:
+				header.cmd = CMD_ERROR;
+				header.dataLength = 0;
+				send(_cSock, (char*)&header, sizeof(header), 0);
+				break;
 		}
-		
 	}
 
 	// 8. 关闭套接字
