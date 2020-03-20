@@ -99,22 +99,24 @@ int main() {
 	printf("新客户端IP: = %s \n", inet_ntoa(clientAddr.sin_addr));
 
 	while (true) {
-		DataHeader header;
+		// 建立一个缓冲区
+		char szRecv[1024] = { 0 };
 		// 5.接受客户端数据
-		int nlen = recv(_cSock, (char*)&header, sizeof(header), 0);
+		int nlen = recv(_cSock, szRecv, sizeof(DataHeader), 0);
+		DataHeader * header = (DataHeader*)szRecv;  // 包头指针指向缓冲区
 		if (nlen <= 0) {
 			printf("client quit\n");
 			break;
 		}
 		// 解析数据头
 		//printf("收到命令：%d 数据长度 %d\n", header.cmd, header.dataLength);
-		switch (header.cmd)
+		switch (header->cmd)
 		{
 			case CMD_LOGIN: {
-				Login login;
 				// 报文头前面已经收到了，这里要进行地址偏移。下同。
-				recv(_cSock, (char*)&login + sizeof(header), sizeof(Login) - sizeof(header), 0);
-				printf("收到命令:CMD_LOGIN, 数据长度:%d, usrname = %s, passwd = %s\n", login.dataLength, login.userName, login.PassWord);
+				recv(_cSock, szRecv + sizeof(DataHeader), header->dataLength - sizeof(DataHeader), 0);
+				Login * login = (Login*)szRecv;
+				printf("收到命令:CMD_LOGIN, 数据长度:%d, usrname = %s, passwd = %s\n", login->dataLength, login->userName, login->PassWord);
 				// 判断用户密码
 				LoginResult ret; 
 				send(_cSock, (char*)&ret, sizeof(LoginResult), 0);
@@ -122,14 +124,14 @@ int main() {
 			break;
 			case CMD_LOGOUT: 
 			{
-				Logout logout;
-				recv(_cSock, (char*)&logout + sizeof(header), sizeof(Logout) - sizeof(header), 0);
+				recv(_cSock, szRecv + sizeof(DataHeader), header->dataLength - sizeof(DataHeader), 0);
+				Logout * logout = (Logout*)szRecv;
 				LogoutResult ret;
 				send(_cSock, (char*)&ret, sizeof(ret), 0);
 			}break;
 			default:
-				header.cmd = CMD_ERROR;
-				header.dataLength = 0;
+				header->cmd = CMD_ERROR;
+				header->dataLength = 0;
 				send(_cSock, (char*)&header, sizeof(header), 0);
 				break;
 		}
