@@ -20,6 +20,7 @@ enum CMD {  // 定义数据类型
 	CMD_LOGIN_RESULT,
 	CMD_LOGOUT,
 	CMD_LOGOUT_RESULT,
+	CMD_NEW_USER_JOIN,  // 新用户加入
 	CMD_ERROR
 };
 struct DataHeader {  // 作为所有数据报文的基类
@@ -58,6 +59,19 @@ struct LogoutResult :public DataHeader {  //登出结果
 	int result;
 };
 
+
+// 当有新客户端加入时，就需要群发给其他已经加入的客户端。
+struct NewUserJoin :public DataHeader {
+	NewUserJoin() {
+		dataLength = sizeof(NewUserJoin);
+		cmd = CMD_NEW_USER_JOIN;
+		sock = 0;
+	}
+	int sock;
+};
+
+int processor(SOCKET _cSock);
+
 int main() {
 	// Windows 网络开发框架
 	WORD ver = MAKEWORD(2, 2);
@@ -86,51 +100,83 @@ int main() {
 
 	
 	while (true) {
-
-		// 3. 输入请求命令
-		char cmdBUF[128] = {};
-		scanf("%s", cmdBUF);
-		// 4. 处理请求命令
-		if (0 == strcmp(cmdBUF, "exit")) {
-			printf("exit\n");
+		// 客户端添加 select 网络模型
+		fd_set fdReads;
+		FD_ZERO(&fdReads);
+		FD_SET(_sock, &fdReads);
+		timeval t = { 1, 0 };  // 阻塞时长上限1s
+		int ret = select(_sock, &fdReads, NULL, NULL, NULL);  
+		if (ret < 0) {
+			printf("select 出错\n");
 			break;
 		}
-		else if(0 == strcmp(cmdBUF, "login")){
-			Login login;
-			strcpy(login.userName, "junpfeng");
-			strcpy(login.PassWord, "123");
-			// 5. 向服务器发送请求登录
-			send(_sock, (const char*)&login, sizeof(login), 0);
-
-			LoginResult loginRet;
-			// 接受服务器的登录结果
-			recv(_sock, (char*)&loginRet, sizeof(loginRet), 0);
-			printf("loginResult %d \n", loginRet.result);  
+		if (FD_ISSET(_sock, &fdReads)) { // 客户端收到数据
+			FD_CLR(_sock, &fdReads);
+			if (-1 == processor(_sock)) {
+				printf("服务器断开连接\n");
+				break;
+			}
 		}
-		else if (0 == strcmp(cmdBUF, "logout")) {
-			Logout logout;
-			strcpy(logout.userName, "junpfeng");
-			// 向接受服务器返回的数据
-			send(_sock, (const char*)&logout, sizeof(logout), 0);
-			// 接收服务器返回的数据
-			LogoutResult logoutRet;
-			recv(_sock, (char*)&logoutRet, sizeof(logoutRet), 0);
-			printf("logoutResult :%d\n", logoutRet.result);
-		}
-		else {
-			printf("命令不支持\n");
-		}
+		//printf("客户端处理其他业务\n");
+		Login login;
+		strcpy(login.userName, "xinyueox");
+		strcpy(login.PassWord, "123");
+		//send(_sock, (const char*)&login, sizeof(Login), 0);
+		//Sleep(1000);
 	}
-
-
 	// 7. 关闭套接字
 	closesocket(_sock);
 	// --------------
-
 	// Windows网络开发框架
 	// 清除 socket 环境
 	WSACleanup();
 	printf("quit\n");
 	getchar();
+	return 0;
+}
+
+int processor(SOCKET _cSock)
+/*
+输入：客户端连接套接字
+处理：xxx
+返回：是否处理成功 -1/0
+*/
+{
+
+	// 建立一个缓冲区
+	char szRecv[1024] = { 0 };
+	// 5.接受客户端数据
+	int nlen = recv(_cSock, szRecv, sizeof(DataHeader), 0);
+	DataHeader * header = (DataHeader*)szRecv;  // 包头指针指向缓冲区
+	if (nlen <= 0) {
+		printf("server socket = %d quit\n", _cSock);
+		return -1;
+	}
+	// 解析数据头
+	//printf("收到命令：%d 数据长度 %d\n", header.cmd, header.dataLength);
+	switch (header->cmd)
+	{
+	case CMD_LOGIN_RESULT: {
+		recv(_cSock, szRecv + sizeof(DataHeader), header->dataLength - sizeof(DataHeader), 0);
+		LoginResult * login = (LoginResult  *)szRecv;
+		printf("收到命令:CMD_LOGIN_RESULT, 数据长度:%d\n", login->dataLength);
+	}break;
+	case CMD_LOGOUT_RESULT:
+	{
+		recv(_cSock, szRecv + sizeof(DataHeader), header->dataLength - sizeof(DataHeader), 0);
+		LogoutResult * logout = (LogoutResult*)szRecv;
+		printf("收到命令:CMD_LOGOUT_RESULT, 数据长度:%d\n", logout->dataLength);
+	}break;
+	case CMD_NEW_USER_JOIN: {
+		recv(_cSock, szRecv + sizeof(DataHeader), header->dataLength - sizeof(DataHeader), 0);
+		NewUserJoin * userjoin = (NewUserJoin*)szRecv;
+		printf("有新客户端加入:socket = %d, 数据长度:%d\n", userjoin->sock, userjoin->dataLength);
+	}break;
+	default:
+		header->cmd = CMD_ERROR;
+		header->dataLength = 0;
+		send(_cSock, (char*)&header, sizeof(header), 0);
+		break;
+	}
 	return 0;
 }

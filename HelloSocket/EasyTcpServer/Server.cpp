@@ -20,6 +20,7 @@ enum CMD {  // 定义数据类型
 	CMD_LOGIN_RESULT,
 	CMD_LOGOUT,
 	CMD_LOGOUT_RESULT,
+	CMD_NEW_USER_JOIN,  // 新用户加入
 	CMD_ERROR
 };
 struct DataHeader {  // 作为所有数据报文的基类
@@ -58,6 +59,16 @@ struct LogoutResult :public DataHeader {  //登出结果
 	int result;
 };
 
+// 当有新客户端加入时，就需要群发给其他已经加入的客户端。
+struct NewUserJoin :public DataHeader {
+	NewUserJoin() {
+		dataLength = sizeof(NewUserJoin);
+		cmd = CMD_NEW_USER_JOIN;
+		sock = 0;
+	}
+	int sock;
+};
+
 int processor(SOCKET _cSock);
 std::vector<SOCKET> g_clients;
 
@@ -88,18 +99,6 @@ int main() {
 	else {
 		printf("listen successfully\n");
 	}
-	
-	// 4. 阻塞等待客户端请求
-	//sockaddr_in clientAddr = {};
-	//int nAddrLen = sizeof(sockaddr_in);
-	//SOCKET _cSock = INVALID_SOCKET;
-	//char msgBUF[] = "hello, lam server.";
-
-	////_cSock = accept(_sock, (sockaddr*)&clientAddr, &nAddrLen);
-	////if (INVALID_SOCKET == _cSock) {
-	////	printf("invalid client socket\n");
-	////}
-	////printf("新客户端IP: = %s \n", inet_ntoa(clientAddr.sin_addr));
 
 	while (true) {
 
@@ -120,6 +119,7 @@ int main() {
 			FD_SET(x, &fdRead);
 		}
 
+		// timeval t = {0,0};  // 非阻塞
 		int ret = select(_sock + 1, &fdRead, &fdWrite, &fdExp, NULL);  // socket阻塞监听
 		if (ret < 0) {
 			printf("select 出错\n");
@@ -135,8 +135,13 @@ int main() {
 				printf("invalid socket\n");
 			}
 			else {  // 成功后，将连接好的 客户端套接字加入 客户端集合
+				for (auto & x : g_clients) {  // 向其他客户端群发添加新用户的消息。
+					NewUserJoin userjoin;
+					userjoin.sock = _cSock;
+					send(x, (const char*)&userjoin, sizeof(NewUserJoin), 0);
+				}
 				g_clients.push_back(_cSock);
-				printf("新客户端IP: = %s,sock = %d \n", inet_ntoa(clientAddr.sin_addr), (int)_cSock);
+				printf("新客户端加入:socket = %d, IP = %s \n", (int)_cSock, inet_ntoa(clientAddr.sin_addr));
 			}
 		}
 
@@ -147,7 +152,7 @@ int main() {
 					g_clients.erase(iter);
 			};
 		}
-		
+		printf("处理其他主线程业务...");
 	}
 
 	// 8. 关闭套接字
@@ -178,7 +183,7 @@ int processor(SOCKET _cSock)
 	int nlen = recv(_cSock, szRecv, sizeof(DataHeader), 0);
 	DataHeader * header = (DataHeader*)szRecv;  // 包头指针指向缓冲区
 	if (nlen <= 0) {
-		printf("client quit\n");
+		printf("client socket = %d quit\n", _cSock);
 		return -1;
 	}
 	// 解析数据头
