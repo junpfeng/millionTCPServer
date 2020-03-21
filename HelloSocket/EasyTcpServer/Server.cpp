@@ -7,6 +7,7 @@
 #include<WinSock2.h>
 #include <vector>
 
+
 // 定义结构化数据结构体
 // 注意点：1.客户端和服务器要保证系统位数相同，2.字节序相同
 struct DataPackage {
@@ -152,6 +153,7 @@ int main() {
 					g_clients.erase(iter);
 			};
 		}
+
 		printf("处理其他主线程业务...");
 	}
 

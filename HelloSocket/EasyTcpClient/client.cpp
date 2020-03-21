@@ -5,6 +5,7 @@
 #include<windows.h>
 #include<WinSock2.h>
 #include <stdio.h>
+#include <thread>  // c++11 加入的thread库
 // #pragma comment(lib, "ws2_32.lib")
 
 // 定义结构化数据结构体
@@ -70,7 +71,10 @@ struct NewUserJoin :public DataHeader {
 	int sock;
 };
 
+bool g_brun = true;
+
 int processor(SOCKET _cSock);
+void cmdThread(SOCKET _sock);
 
 int main() {
 	// Windows 网络开发框架
@@ -98,14 +102,16 @@ int main() {
 		printf("connect sucessfully\n");
 	}
 
-	
-	while (true) {
+	// 启动线程
+	std::thread t1(cmdThread, _sock);
+	t1.detach();  // 将 t1 线程和当前线程分离，即不需要主线程回收。
+	while (g_brun) {
 		// 客户端添加 select 网络模型
 		fd_set fdReads;
 		FD_ZERO(&fdReads);
 		FD_SET(_sock, &fdReads);
 		timeval t = { 1, 0 };  // 阻塞时长上限1s
-		int ret = select(_sock, &fdReads, NULL, NULL, NULL);  
+		int ret = select(_sock, &fdReads, NULL, NULL, &t);  
 		if (ret < 0) {
 			printf("select 出错\n");
 			break;
@@ -117,12 +123,7 @@ int main() {
 				break;
 			}
 		}
-		//printf("客户端处理其他业务\n");
-		Login login;
-		strcpy(login.userName, "xinyueox");
-		strcpy(login.PassWord, "123");
-		//send(_sock, (const char*)&login, sizeof(Login), 0);
-		//Sleep(1000);
+
 	}
 	// 7. 关闭套接字
 	closesocket(_sock);
@@ -179,4 +180,30 @@ int processor(SOCKET _cSock)
 		break;
 	}
 	return 0;
+}
+
+void cmdThread(SOCKET _sock) {
+	while (1) {
+		char cmdBuf[256] = {};
+		scanf("%s", cmdBuf);
+		if (0 == strcmp(cmdBuf, "exit")) {
+			printf("退出\n");
+			g_brun = false;
+			return;
+		}
+		else if (0 == strcmp(cmdBuf, "login")) {
+			Login login;
+			strcpy(login.userName, "xinyueox");
+			strcpy(login.PassWord, "123");
+			send(_sock, (const char *)&login, sizeof(Login), 0);
+		}
+		else if (0 == strcmp(cmdBuf, "logout")) {
+			Logout logout;
+			strcpy(logout.userName, "xinyueox");
+			send(_sock, (const char *)&logout, sizeof(Logout), 0);
+		}
+		else {
+			printf("未知的命令\n");
+		}
+	}
 }
