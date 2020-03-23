@@ -17,7 +17,10 @@
 #endif
 
 #include <stdio.h>
+#include <vector>
 #include "MessageHeader.hpp"
+
+std::vector<SOCKET> g_clients;
  
 class EasyTcpClient
 {
@@ -133,28 +136,25 @@ public:
 		//printf("æ”¶åˆ°å‘½ä»¤ï¼š%d æ•°æ®é•¿åº¦ %d\n", header.cmd, header.dataLength);
 		switch (header->cmd)
 		{
-		case CMD_LOGIN_RESULT: {
-
-			LoginResult * login = (LoginResult  *)header;
-			printf("æ”¶åˆ°å‘½ä»¤:CMD_LOGIN_RESULT, æ•°æ®é•¿åº¦:%d\n", header->dataLength);
-		}break;
-		case CMD_LOGOUT_RESULT:
-		{
-
-			LogoutResult * logout = (LogoutResult*)header;
-			printf("æ”¶åˆ°å‘½ä»¤:CMD_LOGOUT_RESULT, æ•°æ®é•¿åº¦:%d\n", header->dataLength);
-		}break;
-		case CMD_NEW_USER_JOIN: {
-	
-			NewUserJoin * userjoin = (NewUserJoin*)header;
-			printf("æœ‰æ–°å®¢æˆ·ç«¯åŠ å…¥:socket = %d, æ•°æ®é•¿åº¦:%d\n", userjoin->sock, header->dataLength);
-		}break;
-		default:
-			header->cmd = CMD_ERROR;
-			header->dataLength = 0;
-			send(_cSock, (char*)&header, sizeof(header), 0);
-			break;
-		}
+			case CMD_LOGIN_RESULT: {
+				LoginResult * login = (LoginResult  *)header;
+				printf("ÊÕµ½ÃüÁî:CMD_LOGIN_RESULT, Êı¾İ³¤¶È:%d\n", header->dataLength);
+			}break;
+			case CMD_LOGOUT_RESULT:
+			{
+				LogoutResult * logout = (LogoutResult*)header;
+				printf("ÊÕµ½ÃüÁî:CMD_LOGOUT_RESULT, Êı¾İ³¤¶È:%d\n", header->dataLength);
+			}break;
+			case CMD_NEW_USER_JOIN: {
+				NewUserJoin * userjoin = (NewUserJoin*)header;
+				printf("ÓĞĞÂ¿Í»§¶Ë¼ÓÈë:socket = %d, Êı¾İ³¤¶È:%d\n", userjoin->sock, header->dataLength);
+			}break;
+			default:
+				header->cmd = CMD_ERROR;
+				header->dataLength = 0;
+				send(_cSock, (char*)&header, sizeof(header), 0);
+				break;
+			}
 	}
 
 	// å¤„ç†æ•°æ®

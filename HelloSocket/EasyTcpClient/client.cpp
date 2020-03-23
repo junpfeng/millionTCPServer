@@ -19,6 +19,7 @@ int main() {
 		if (!client.onRun())
 			break;
 	}
+	client.Close();
 	printf("quit\n");
 	client.Close();
 	getchar();
@@ -27,6 +28,11 @@ int main() {
 
 void cmdThread(EasyTcpClient *client) {
 	while (1) {
+		//Login login;
+		//strcpy(login.userName, "xinyueox");
+		//strcpy(login.PassWord, "123");
+		//client->SendData(&login);
+		//Sleep(1);
 		char cmdBuf[256] = {};
 		scanf("%s", cmdBuf);
 		if (0 == strcmp(cmdBuf, "exit")) {
