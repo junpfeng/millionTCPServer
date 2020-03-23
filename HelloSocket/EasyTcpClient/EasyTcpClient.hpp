@@ -17,7 +17,10 @@
 #endif
 
 #include <stdio.h>
+#include <vector>
 #include "MessageHeader.hpp"
+
+std::vector<SOCKET> g_clients;
  
 class EasyTcpClient
 {
@@ -129,28 +132,25 @@ public:
 		//printf("收到命令：%d 数据长度 %d\n", header.cmd, header.dataLength);
 		switch (header->cmd)
 		{
-		case CMD_LOGIN_RESULT: {
-
-			LoginResult * login = (LoginResult  *)header;
-			printf("收到命令:CMD_LOGIN_RESULT, 数据长度:%d\n", header->dataLength);
-		}break;
-		case CMD_LOGOUT_RESULT:
-		{
-
-			LogoutResult * logout = (LogoutResult*)header;
-			printf("收到命令:CMD_LOGOUT_RESULT, 数据长度:%d\n", header->dataLength);
-		}break;
-		case CMD_NEW_USER_JOIN: {
-	
-			NewUserJoin * userjoin = (NewUserJoin*)header;
-			printf("有新客户端加入:socket = %d, 数据长度:%d\n", userjoin->sock, header->dataLength);
-		}break;
-		default:
-			header->cmd = CMD_ERROR;
-			header->dataLength = 0;
-			send(_cSock, (char*)&header, sizeof(header), 0);
-			break;
-		}
+			case CMD_LOGIN_RESULT: {
+				LoginResult * login = (LoginResult  *)header;
+				printf("收到命令:CMD_LOGIN_RESULT, 数据长度:%d\n", header->dataLength);
+			}break;
+			case CMD_LOGOUT_RESULT:
+			{
+				LogoutResult * logout = (LogoutResult*)header;
+				printf("收到命令:CMD_LOGOUT_RESULT, 数据长度:%d\n", header->dataLength);
+			}break;
+			case CMD_NEW_USER_JOIN: {
+				NewUserJoin * userjoin = (NewUserJoin*)header;
+				printf("有新客户端加入:socket = %d, 数据长度:%d\n", userjoin->sock, header->dataLength);
+			}break;
+			default:
+				header->cmd = CMD_ERROR;
+				header->dataLength = 0;
+				send(_cSock, (char*)&header, sizeof(header), 0);
+				break;
+			}
 	}
 
 	// 处理数据
