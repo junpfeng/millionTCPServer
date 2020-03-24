@@ -1,6 +1,6 @@
 #include "EasyTcpClient.hpp"
 #include <thread>
-
+#include <cstring>
 bool g_brun = true;
 
 void cmdThread(EasyTcpClient *client);
@@ -11,15 +11,16 @@ int main() {
 	client.initSocket();
 	client.Connect("127.0.0.1", 4567);
 
-	// Æô¶¯Ïß³Ì
+	// å¯åŠ¨çº¿ç¨‹
 	std::thread t1(cmdThread, &client);
-	t1.detach();  // ½« t1 Ïß³ÌºÍµ±Ç°Ïß³Ì·ÖÀë£¬¼´²»ĞèÒªÖ÷Ïß³Ì»ØÊÕ¡£
+	t1.detach();  // å°† t1 çº¿ç¨‹å’Œå½“å‰çº¿ç¨‹åˆ†ç¦»ï¼Œå³ä¸éœ€è¦ä¸»çº¿ç¨‹å›æ”¶ã€‚
 	while (g_brun) {
 
 		if (!client.onRun())
 			break;
 	}
 	printf("quit\n");
+	client.Close();
 	getchar();
 	return 0;
 }
@@ -29,7 +30,7 @@ void cmdThread(EasyTcpClient *client) {
 		char cmdBuf[256] = {};
 		scanf("%s", cmdBuf);
 		if (0 == strcmp(cmdBuf, "exit")) {
-			printf("ÍË³ö\n");
+			printf("é€€å‡º\n");
 			g_brun = false;
 			return;
 		}
@@ -45,7 +46,7 @@ void cmdThread(EasyTcpClient *client) {
 			client->SendData((DataHeader*)&logout);
 		}
 		else {
-			printf("Î´ÖªµÄÃüÁî\n");
+			printf("æœªçŸ¥çš„å‘½ä»¤\n");
 		}
 	}
 }
