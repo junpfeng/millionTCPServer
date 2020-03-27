@@ -10,6 +10,7 @@
 	#include<WinSock2.h>
 #else
 	#include <unistd.h>
+	#include <sys/select.h>
 	#include <arpa/inet.h>
 
 	#define SOCKET int
@@ -20,6 +21,8 @@
 #include <vector>
 #include <stdio.h>
 #include "MessageHeader.hpp"
+#include <algorithm>
+#include <malloc.h>
 std::vector<SOCKET> g_clients;
 
 
@@ -57,14 +60,14 @@ public:
 		// -通用框架部分-
 		// 1. 创建socket 套接字
 		if (ValidSocket(_sock)) {
-			printf("<socket=%d>关闭旧连接\n", _sock);
+			printf("<socket=%d>close old connection\n", _sock);
 			Close();
 		}
 		_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (INVALID_SOCKET == _sock) {
-			printf("建立socket失败\n");
+			printf("build socket failed\n");
 		}else {
-			printf("建立<socket=%d>成功\n");
+			printf("build <socket=%d> successfully\n",_sock);
 		}
 	}
 
@@ -109,9 +112,9 @@ public:
 	// 接受客户端的连接请求
 	SOCKET Accept() {
 		sockaddr_in clientAddr = {};
-		int nAddrLen = sizeof(clientAddr);
+		socklen_t nAddrLen = sizeof(clientAddr);
 		SOCKET _cSock = INVALID_SOCKET;
-		_cSock = accept(_sock, (sockaddr*)&clientAddr, &nAddrLen);  // 同客户端建立连接
+		_cSock = accept(_sock, (sockaddr*)&clientAddr, (socklen_t*)&nAddrLen);  // 同客户端建立连接
 		if (!ValidSocket(_cSock)) {
 			printf("invalid socket\n");
 			return INVALID_SOCKET;
@@ -122,7 +125,7 @@ public:
 				send(x, (const char*)&userjoin, sizeof(NewUserJoin), 0);
 			}
 			g_clients.push_back(_cSock);
-			printf("新客户端加入:socket = %d, IP = %s \n", (int)_cSock, inet_ntoa(clientAddr.sin_addr));
+			printf("new joiner:socket = %d, IP = %s \n", (int)_cSock, inet_ntoa(clientAddr.sin_addr));
 		}
 		return _cSock;
 	}
@@ -141,33 +144,39 @@ public:
 		FD_SET(_sock, &fdRead);  //将监听的socket加入读事件集合中
 		FD_SET(_sock, &fdWrite);
 		FD_SET(_sock, &fdExp);
-
+		int maxfd = _sock;
 		for (auto &x : g_clients) {  //将需要监听的客户端socket套接字加入监听集合，第一次进入是没有的
 			FD_SET(x, &fdRead);  // 所有客户端集合的套接字都是需要监听的
+			maxfd = std::max(maxfd, x);
 		}
 
 		// timeval t = {0,0};  // 非阻塞
-		int ret = select(_sock + 1, &fdRead, &fdWrite, &fdExp, NULL);  // socket阻塞监听
+
+		int ret = select(maxfd + 1, &fdRead, &fdWrite, &fdExp, NULL);  // socket阻塞监听
 		if (ret < 0) {
-			printf("select 出错\n");
+			printf("select error\n");
 			return ret;
 		}else if (FD_ISSET(_sock, &fdRead)) {  // 如果是_sock套接字触发了事件，说明有新的连接请求，调用 accept
 			FD_CLR(_sock, &fdRead);  // 一旦监听到某个套接字触发了事件，就先将其从监听事件集合中清除，因为每次调用这个函数时，会将监听套接字添加进来的
 			Accept();  // 接受新的连接请求
 		}
-		for (unsigned int n = 0; n < fdRead.fd_count; ++n) { // 对所有读事件集合中的客户端进行处理
-			DataHeader * header = RecvData(fdRead.fd_array[n]);
-			if (nullptr == header) {  // 返回nullptr，表示客户端已经断开连接
-				auto iter = find(g_clients.begin(), g_clients.end(), fdRead.fd_array[n]);  // 将断开连接的客户端套接字从客户端集合中剔除，
-				if (iter != g_clients.end())
-					g_clients.erase(iter);
-			}
-			else { // 否则处理事件
-				ProcessNetMsg(fdRead.fd_array[n], header);
-				free(header);
-			}
+		// 轮询事件集合，寻找触发事件文件描述符
+		for (auto &x : g_clients) { 
+		    if (!FD_ISSET(x, &fdRead))  // 该文件描述符没有触发读事件集合
+			continue;
+		 
+		    DataHeader * header = RecvData(x);
+		    if (nullptr == header) {  // 返回nullptr，表示客户端已经断开连接
+			auto iter = find(g_clients.begin(), g_clients.end(), x);  // 将断开连接的客户端套接字从客户端集合中剔除，
+			if (iter != g_clients.end())
+			g_clients.erase(iter);
+		    }
+		    else { // 否则处理事件
+			ProcessNetMsg(x, header);
+			free(header);
+		    }
 		}
-		printf("处理其他主线程业务...");
+		printf("processing another tasks...");
 		return 0;
 	}
 	
@@ -179,7 +188,7 @@ public:
 		{
 		case CMD_LOGIN: {	
 			Login * login = (Login*)header;
-			printf("收到命令:CMD_LOGIN, 数据长度:%d, usrname = %s, passwd = %s\n", login->dataLength, login->userName, login->PassWord);
+			printf("get cmd :CMD_LOGIN, data length:%d, usrname = %s, passwd = %s\n", login->dataLength, login->userName, login->PassWord);
 			// 判断用户密码，实际上还没做处理
 			DataHeader * header = new LoginResult;
 			SendData(_cSock, header);
@@ -187,7 +196,7 @@ public:
 		case CMD_LOGOUT:
 		{
 			Logout * logout = (Logout*)header;
-			printf("收到命令:CMD_LOGOUT, 数据长度:%d, usrname = %s\n", logout->dataLength, logout->userName);
+			printf("get cmd:CMD_LOGOUT, data length:%d, usrname = %s\n", logout->dataLength, logout->userName);
 			DataHeader * header = new LogoutResult;
 			SendData(_cSock, header);
 		}break;

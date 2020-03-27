@@ -2,7 +2,7 @@ src = $(wildcard *.cpp)
 targets = $(patsubst %.cpp, %, $(src))
 
 CC = g++
-CFLAGS = -Wall -g --std=c++11 -lpthread
+CFLAGS = -Wall -g --std=c++11 -lpthread -I./
 
 all:$(targets)
 

@@ -138,16 +138,16 @@ public:
 		{
 			case CMD_LOGIN_RESULT: {
 				LoginResult * login = (LoginResult  *)header;
-				printf("收到命令:CMD_LOGIN_RESULT, 数据长度:%d\n", header->dataLength);
+				printf("CMD_LOGIN_RESULT, data length:%d\n", header->dataLength);
 			}break;
 			case CMD_LOGOUT_RESULT:
 			{
 				LogoutResult * logout = (LogoutResult*)header;
-				printf("收到命令:CMD_LOGOUT_RESULT, 数据长度:%d\n", header->dataLength);
+				printf("CMD_LOGOUT_RESULT, data length:%d\n", header->dataLength);
 			}break;
 			case CMD_NEW_USER_JOIN: {
 				NewUserJoin * userjoin = (NewUserJoin*)header;
-				printf("有新客户端加入:socket = %d, 数据长度:%d\n", userjoin->sock, header->dataLength);
+				printf("newer join:socket = %d, data length:%d\n", userjoin->sock, header->dataLength);
 			}break;
 			default:
 				header->cmd = CMD_ERROR;
@@ -169,7 +169,7 @@ public:
 		FD_ZERO(&fdReads);
 		FD_SET(_sock, &fdReads);
 		timeval t = { 1, 0 };  // 闃诲鏃堕暱涓婇檺1s
-		int ret = select(_sock, &fdReads, NULL, NULL, &t);
+		int ret = select(_sock + 1, &fdReads, NULL, NULL, &t);
 		if (ret < 0) {
 			printf("<socket=%d> select 鍑洪敊\n", _sock);
 			return false;
