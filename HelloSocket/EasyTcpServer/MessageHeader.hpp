@@ -1,8 +1,8 @@
 #ifndef _MESSAGEHEADER_HPP_
 #define _MESSAGEHEADER_HPP_
 #ifdef _WIN32
-	// #pragma comment(lib, "ws2_32.lib")
-	#define WIN32_LEAN_AND_MEAN  // ±ÜÃâÒıÈëÔçÆÚµÄÖØ¸´¶¨Òå
+	#pragma comment(lib, "ws2_32.lib")
+	#define WIN32_LEAN_AND_MEAN  // é¿å…å¼•å…¥æ—©æœŸçš„é‡å¤å®šä¹‰
 	#define _WINSOCK_DEPRECATED_NO_WARNINGS
 	#include<windows.h>
 	#include<WinSock2.h>
@@ -15,50 +15,56 @@
 	#define SOCKET_ERROR   (-1)
 #endif
 
-// ¶¨Òå½á¹¹»¯Êı¾İ½á¹¹Ìå
-// ×¢Òâµã£º1.¿Í»§¶ËºÍ·şÎñÆ÷Òª±£Ö¤ÏµÍ³Î»ÊıÏàÍ¬£¬2.×Ö½ÚĞòÏàÍ¬
+// å®šä¹‰ç»“æ„åŒ–æ•°æ®ç»“æ„ä½“
+// æ³¨æ„ç‚¹ï¼š1.å®¢æˆ·ç«¯å’ŒæœåŠ¡å™¨è¦ä¿è¯ç³»ç»Ÿä½æ•°ç›¸åŒï¼Œ2.å­—èŠ‚åºç›¸åŒ
 struct DataPackage {
 	int age;
 	char name[32];
 };
 
-// ¶¨ÒåÕıÊ½µÄÊı¾İ°ü
-enum CMD {  // ¶¨ÒåÊı¾İÀàĞÍ
+// å®šä¹‰æ­£å¼çš„æ•°æ®åŒ…
+enum CMD {  // å®šä¹‰æ•°æ®ç±»å‹
 	CMD_LOGIN,
 	CMD_LOGIN_RESULT,
 	CMD_LOGOUT,
 	CMD_LOGOUT_RESULT,
-	CMD_NEW_USER_JOIN,  // ĞÂÓÃ»§¼ÓÈë
+	CMD_NEW_USER_JOIN,  // æ–°ç”¨æˆ·åŠ å…¥
 	CMD_ERROR
 };
-struct DataHeader {  // ×÷ÎªËùÓĞÊı¾İ±¨ÎÄµÄ»ùÀà
+struct DataHeader {  // ä½œä¸ºæ‰€æœ‰æ•°æ®æŠ¥æ–‡çš„åŸºç±»
+	DataHeader() {
+		dataLength = sizeof(DataHeader);
+		cmd = CMD_ERROR;
+	}
 	CMD cmd;
-	short dataLength;  // Êı¾İ³¤¶ÈÒ»°ã²»´óÓÚ 65535
+	unsigned long long dataLength;  // å•ä¸ªTCPæ•°æ®åŒ…çš„æ•°æ®é•¿åº¦ä¸€èˆ¬ä¸å¤§äº 65535ï¼Œä½†æ˜¯è¿ç»­çš„å­—èŠ‚æµå°±ä¸æ­¢äº†ã€‚
 };
-struct Login :public DataHeader {  // µÇÂ¼
+struct Login :public DataHeader {  // ç™»å½•
 	Login() {
 		dataLength = sizeof(Login);
 		cmd = CMD_LOGIN;
 	}
 	char userName[32];
 	char PassWord[32];
+	char dat[932];  // æ•°æ®å¡«å……ï¼Œè®© Login å 1kå­—èŠ‚
 };
-struct LoginResult :public DataHeader {  //µÇÂ¼½á¹û
+struct LoginResult :public DataHeader {  //ç™»å½•ç»“æœ
 	LoginResult() {
 		dataLength = sizeof(LoginResult);
 		cmd = CMD_LOGIN_RESULT;
 		result = 0;
 	}
 	int result;
+	char data[992];
 };
-struct Logout :public DataHeader { // µÇ³ö
+struct Logout :public DataHeader { // ç™»å‡º
 	Logout() {
 		dataLength = sizeof(Logout);
 		cmd = CMD_LOGOUT;
 	}
 	char userName[32];
 };
-struct LogoutResult :public DataHeader {  //µÇ³ö½á¹û
+struct LogoutResult :public DataHeader {  //ç™»å‡ºç»“æœ
 	LogoutResult() {
 		dataLength = sizeof(LogoutResult);
 		cmd = CMD_LOGOUT_RESULT;
@@ -68,7 +74,7 @@ struct LogoutResult :public DataHeader {  //µÇ³ö½á¹û
 };
 
 
-// µ±ÓĞĞÂ¿Í»§¶Ë¼ÓÈëÊ±£¬¾ÍĞèÒªÈº·¢¸øÆäËûÒÑ¾­¼ÓÈëµÄ¿Í»§¶Ë¡£
+// å½“æœ‰æ–°å®¢æˆ·ç«¯åŠ å…¥æ—¶ï¼Œå°±éœ€è¦ç¾¤å‘ç»™å…¶ä»–å·²ç»åŠ å…¥çš„å®¢æˆ·ç«¯ã€‚
 struct NewUserJoin :public DataHeader {
 	NewUserJoin() {
 		dataLength = sizeof(NewUserJoin);

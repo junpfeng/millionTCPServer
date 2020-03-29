@@ -1,7 +1,7 @@
 #ifndef _MESSAGEHEADER_HPP_
 #define _MESSAGEHEADER_HPP_
 #ifdef _WIN32
-	// #pragma comment(lib, "ws2_32.lib")
+	#pragma comment(lib, "ws2_32.lib")
 	#define WIN32_LEAN_AND_MEAN  // 避免引入早期的重复定义
 	#define _WINSOCK_DEPRECATED_NO_WARNINGS
 	#include<windows.h>
@@ -32,8 +32,12 @@ enum CMD {  // 定义数据类型
 	CMD_ERROR
 };
 struct DataHeader {  // 作为所有数据报文的基类
+	DataHeader() {
+		dataLength = sizeof(DataHeader);
+		cmd = CMD_ERROR;
+	}
 	CMD cmd;
-	short dataLength;  // 数据长度一般不大于 65535
+	unsigned long long dataLength;  // 单个TCP数据包的数据长度一般不大于 65535，但是连续的字节流就不止了。
 };
 struct Login :public DataHeader {  // 登录
 	Login() {
@@ -42,6 +46,7 @@ struct Login :public DataHeader {  // 登录
 	}
 	char userName[32];
 	char PassWord[32];
+	char dat[928];  // 数据填充，让 Login 占1k字节
 };
 struct LoginResult :public DataHeader {  //登录结果
 	LoginResult() {
@@ -50,6 +55,7 @@ struct LoginResult :public DataHeader {  //登录结果
 		result = 0;
 	}
 	int result;
+	char data[992];
 };
 struct Logout :public DataHeader { // 登出
 	Logout() {
