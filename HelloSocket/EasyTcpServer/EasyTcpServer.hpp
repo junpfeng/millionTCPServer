@@ -20,8 +20,37 @@
 #include <vector>
 #include <stdio.h>
 #include "MessageHeader.hpp"
-std::vector<SOCKET> g_clients;
 
+// 缓冲区数据挖掘机的大小，为什么不直接用第二缓冲区接受内核缓冲区的数据？
+// 答：因为第二缓冲区的数据可能还没处理完，直接接受会有覆盖的风险，因此采用挖掘机当中介
+const unsigned int RECV_BUFF_SZIE = 10240; // 10 kb 
+// 第二缓冲区的大小
+const unsigned int MSG_BUFF_SZIE = 102400; // 100 kb
+
+class clientSocket {
+private:
+	SOCKET _cSock;
+	char _MsgBuf[MSG_BUFF_SZIE];
+	int _lastPos;  // 指定第二缓冲区的已经使用长度
+public:
+	clientSocket(SOCKET cSock = INVALID_SOCKET) :_cSock(cSock), 
+		_lastPos(0), _MsgBuf{} 
+	{}
+	SOCKET getcSock() {
+		return _cSock;
+	}
+	char * getMsgBuf() {
+		return _MsgBuf;
+	}
+
+	int getLastPos() {
+		return _lastPos;
+	}
+
+	void setLastPos(int pos) {
+		_lastPos = pos;
+	}
+};
 
 class EasyTcpServer
 {
@@ -36,9 +65,11 @@ class EasyTcpServer
 	*/
 private:
 	SOCKET _sock;
-	
+	std::vector<clientSocket *> _clients;
+	char _RecvBuf[RECV_BUFF_SZIE];
+
 public:
-	EasyTcpServer():_sock(INVALID_SOCKET)
+	EasyTcpServer() :_sock(INVALID_SOCKET), _RecvBuf{}
 	{
 
 	}
@@ -115,18 +146,20 @@ public:
 		if (!ValidSocket(_cSock)) {
 			printf("invalid socket\n");
 			return INVALID_SOCKET;
-		}else {  // 成功后，将连接好的 客户端套接字加入 客户端集合
-			for (auto & x : g_clients) {  // 向其他客户端群发添加新用户的消息。
-				NewUserJoin userjoin;
-				userjoin.sock = _cSock;
-				send(x, (const char*)&userjoin, sizeof(NewUserJoin), 0);
-			}
-			g_clients.push_back(_cSock);
+		}else {  
+			NewUserJoin userjoin;
+			SendDataToAll(userjoin);  // 将新客户端加入的消息，群发出去
+			_clients.push_back(new clientSocket(_cSock));
 			printf("新客户端加入:socket = %d, IP = %s \n", (int)_cSock, inet_ntoa(clientAddr.sin_addr));
 		}
 		return _cSock;
 	}
-
+	// 向所有客户端群发消息，参数采用的父类引用
+	void SendDataToAll(DataHeader & header) {
+		for (int n = (int)_clients.size() - 1; n >= 0; --n) {
+			SendData(_clients[n]->getcSock(), &header);
+		}
+	}
 	// 接听数据
 	int WaitNetMsg() {
 		// select模型
@@ -141,13 +174,15 @@ public:
 		FD_SET(_sock, &fdRead);  //将监听的socket加入读事件集合中
 		FD_SET(_sock, &fdWrite);
 		FD_SET(_sock, &fdExp);
-
-		for (auto &x : g_clients) {  //将需要监听的客户端socket套接字加入监听集合，第一次进入是没有的
-			FD_SET(x, &fdRead);  // 所有客户端集合的套接字都是需要监听的
+		SOCKET maxSock = _sock;
+		for (auto &x : _clients) {  //将需要监听的客户端socket套接字加入监听集合，第一次进入是没有的
+			FD_SET(x->getcSock(), &fdRead);  // 所有客户端集合的套接字都是需要监听的
+			if (maxSock < x->getcSock())
+				maxSock = x->getcSock();
 		}
 
-		// timeval t = {0,0};  // 非阻塞
-		int ret = select(_sock + 1, &fdRead, &fdWrite, &fdExp, NULL);  // socket阻塞监听
+		timeval t = {1,0};  // 非阻塞
+		int ret = select(_sock + 1, &fdRead, &fdWrite, &fdExp, &t);  // 设置最大阻塞事件1s
 		if (ret < 0) {
 			printf("select 出错\n");
 			return ret;
@@ -155,19 +190,23 @@ public:
 			FD_CLR(_sock, &fdRead);  // 一旦监听到某个套接字触发了事件，就先将其从监听事件集合中清除，因为每次调用这个函数时，会将监听套接字添加进来的
 			Accept();  // 接受新的连接请求
 		}
-		for (unsigned int n = 0; n < fdRead.fd_count; ++n) { // 对所有读事件集合中的客户端进行处理
-			DataHeader * header = RecvData(fdRead.fd_array[n]);
-			if (nullptr == header) {  // 返回nullptr，表示客户端已经断开连接
-				auto iter = find(g_clients.begin(), g_clients.end(), fdRead.fd_array[n]);  // 将断开连接的客户端套接字从客户端集合中剔除，
-				if (iter != g_clients.end())
-					g_clients.erase(iter);
-			}
-			else { // 否则处理事件
-				ProcessNetMsg(fdRead.fd_array[n], header);
-				free(header);
+
+		for (int n = (int)_clients.size() - 1; n >= 0; --n) {
+			// 轮询判断是不是当前socket造成的事件触发
+			if (FD_ISSET(_clients[n]->getcSock(), &fdRead)) {
+				// 异常判断，客户端断开
+				if (-1 == RecvData(_clients[n]))
+				{
+					auto iter = _clients.begin() + n;
+					if (iter != _clients.end()) {
+						delete _clients[n];
+						_clients.erase(iter);
+						
+					}
+				}
 			}
 		}
-		printf("处理其他主线程业务...");
+		// printf("处理其他主线程业务...\n");
 		return 0;
 	}
 	
@@ -178,23 +217,21 @@ public:
 		switch (header->cmd)
 		{
 		case CMD_LOGIN: {	
-			Login * login = (Login*)header;
-			printf("收到命令:CMD_LOGIN, 数据长度:%d, usrname = %s, passwd = %s\n", login->dataLength, login->userName, login->PassWord);
+			//Login * login = (Login*)header;
+			//printf("收到命令:CMD_LOGIN, 数据长度:%d, usrname = %s, passwd = %s\n", login->dataLength, login->userName, login->PassWord);
 			// 判断用户密码，实际上还没做处理
-			DataHeader * header = new LoginResult;
-			SendData(_cSock, header);
+			//DataHeader * header = new LoginResult;
+			//SendData(_cSock, header);
 		}break;
 		case CMD_LOGOUT:
 		{
-			Logout * logout = (Logout*)header;
-			printf("收到命令:CMD_LOGOUT, 数据长度:%d, usrname = %s\n", logout->dataLength, logout->userName);
-			DataHeader * header = new LogoutResult;
-			SendData(_cSock, header);
+			//Logout * logout = (Logout*)header;
+			//printf("收到命令:CMD_LOGOUT, 数据长度:%d, usrname = %s\n", logout->dataLength, logout->userName);
+			//DataHeader * header = new LogoutResult;
+			//SendData(_cSock, header);
 		}break;
 		default:
-			header->cmd = CMD_ERROR;
-			header->dataLength = 0;
-			SendData(_cSock, header);
+			printf("<socket = %d>收到未定义数据\n", _cSock);
 			break;
 		}
 	}
@@ -207,21 +244,34 @@ public:
 		return send(_cSock, (const char*) header, header->dataLength, 0);
 	}
 
-	// 接受数据头
-	DataHeader* RecvData(SOCKET _cSock) {
-		// 建立一个缓冲区
-		// char szRecv[1024] = { 0 };
-		char * szRecv = (char*)malloc(sizeof(char) * 1024);
+
+	int RecvData(clientSocket * cSock) {
+
 		// 5.接受客户端数据
-		int nlen = recv(_cSock, szRecv, sizeof(DataHeader), 0);
-		DataHeader * header = (DataHeader*)szRecv;  // 包头指针指向缓冲区
+		// 先接受数据头
+		int nlen = recv(cSock->getcSock(), _RecvBuf, RECV_BUFF_SZIE, 0);
 		if (nlen <= 0) {
-			printf("client socket = %d quit\n", _cSock);
-			free(szRecv);
-			return nullptr;
+			printf("server socket = %d quit\n", cSock->getcSock());
+			return -1;
 		}
-		recv(_cSock, szRecv + sizeof(DataHeader), header->dataLength - sizeof(DataHeader), 0);  // 接收到的数据并未使用
-		return header;
+		// 将数据放到第二缓冲区
+		memcpy(cSock->getMsgBuf() + cSock->getLastPos(), _RecvBuf, nlen);
+		cSock->setLastPos(cSock->getLastPos() + nlen);
+		// 判断第二缓冲区是否有完整的包头数据
+		while (cSock->getLastPos() >= sizeof(DataHeader)) {
+			DataHeader * header = (DataHeader*)cSock->getMsgBuf();  // 包头指针指向缓冲区
+			if (cSock->getLastPos() >= header->dataLength) {
+				// 第二缓冲区，剩余消息，提前保存
+				int RemainSize = cSock->getLastPos() - header->dataLength;
+				ProcessNetMsg(cSock->getcSock(), header);
+				memcpy(cSock->getMsgBuf(), _RecvBuf + header->dataLength, RemainSize);
+				cSock->setLastPos(RemainSize);
+			}
+			else {
+				// the remain msg not enough
+				break;
+			}
+		}
 	}
 
 	// 关闭
@@ -231,21 +281,26 @@ public:
 		// Windows网络开发框架
 		WSACleanup();
 		// 8. 关闭全局客户端套接字集合
-		for (int n = (int)g_clients.size() - 1; n >= 0; --n) {
-			if (ValidSocket(g_clients[n]))
-				closesocket(g_clients[n]);
+		for (int n = (int)_clients.size() - 1; n >= 0; --n) {
+			if (ValidSocket(_clients[n]->getcSock())) {
+				closesocket(_clients[n]->getcSock()); // 因为socket只是个数字，所以即使只是得到的返回值，也可以关闭
+				delete _clients[n];
+			}
 		}
 		if (ValidSocket(_sock))
 			closesocket(_sock);  // 关闭监听套接字
 #else
 		// 8. 关闭套接字
-		for (int n = (int)g_clients.size() - 1; n >= 0; --n) {
-			if (ValidSocket(g_clients[n]))
-				close(g_clients[n]);
+		for (int n = (int)_clients.size() - 1; n >= 0; --n) {
+			if (ValidSocket(_clients[n]->getcSock())) {
+				close(_clients[n]->getcSock());
+				delete _clients[n];
+			}
 		}
 		if (ValidSocket(_sock))
 			close(_sock);
 #endif
+		_clients.clear();
 	}
 	// 发送数据
 	// 当前IP + 端口是否正在工作中

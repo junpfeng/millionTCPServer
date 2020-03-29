@@ -21,14 +21,23 @@
 #include "MessageHeader.hpp"
 
 std::vector<SOCKET> g_clients;
- 
+// 缓冲区数据挖掘机的大小，为什么不直接用第二缓冲区接受内核缓冲区的数据？
+// 答：因为第二缓冲区的数据可能还没处理完，直接接受会有覆盖的风险，因此采用挖掘机当中介
+const unsigned int UNIT_BUFF_SZIE = 10240; // 10 kb 
+// 第二缓冲区的大小
+const unsigned int RECV_BUFF_SZIE = 102400; // 100 kb
+
 class EasyTcpClient
 {
 	SOCKET _sock;
+	char _unRecv[UNIT_BUFF_SZIE];
+	char _RecvBuf[RECV_BUFF_SZIE];
+	int _lastPos;  // 指定第二缓冲区的已经使用长度
 public:
-	EasyTcpClient()
+	EasyTcpClient() :_sock(INVALID_SOCKET), _unRecv{  }, _RecvBuf{  }, _lastPos(0) 
 	{
-		_sock = INVALID_SOCKET;  // 初始化socket
+		// 初始化socket
+
 	}
 
 	// 虚析构函数
@@ -109,25 +118,36 @@ public:
 
 	// 接收数据，处理粘包、拆包
 	int RecvData(SOCKET _cSock) {
-		// 建立一个缓冲区
-		char szRecv[1024] = { 0 };
 		// 5.接受客户端数据
 		// 先接受数据头
-		int nlen = recv(_cSock, szRecv, sizeof(DataHeader), 0);
-		DataHeader * header = (DataHeader*)szRecv;  // 包头指针指向缓冲区
+		int nlen = recv(_cSock, _unRecv, UNIT_BUFF_SZIE, 0);
 		if (nlen <= 0) {
 			printf("server socket = %d quit\n", _cSock);
 			return -1;
 		}
-		// 再接受数据主体
-		recv(_cSock, szRecv + sizeof(DataHeader), header->dataLength - sizeof(DataHeader), 0);
-		// 对接收到的数据，进行反馈
-		OnNetMsg(_cSock, header);  
+		// 将数据放到第二缓冲区
+		memcpy(_RecvBuf + _lastPos, _unRecv, nlen);
+		_lastPos += nlen; 
+		// 判断第二缓冲区是否有完整的包头数据
+		while (_lastPos >= sizeof(DataHeader)) {
+			DataHeader * header = (DataHeader*)_RecvBuf;  // 包头指针指向缓冲区
+			if (_lastPos >= header->dataLength) {
+				// 第二缓冲区，剩余消息，提前保存
+				int RemainSize = _lastPos - header->dataLength;
+				OnNetMsg(header);
+				memcpy(_RecvBuf, _unRecv + header->dataLength, RemainSize);
+				_lastPos = RemainSize;
+			}
+			else {
+				// the remain msg not enough
+				break;
+			}
+		}
 		return 0;
 	}
 
 	// 响应网络消息
-	void OnNetMsg(SOCKET _cSock, DataHeader *header) {
+	void OnNetMsg(DataHeader *header) {
 		// 解析数据头
 		//printf("收到命令：%d 数据长度 %d\n", header.cmd, header.dataLength);
 		switch (header->cmd)
@@ -145,10 +165,14 @@ public:
 				NewUserJoin * userjoin = (NewUserJoin*)header;
 				printf("有新客户端加入:socket = %d, 数据长度:%d\n", userjoin->sock, header->dataLength);
 			}break;
+			case CMD_ERROR: {
+				printf("<socket=%d>recv:CMD_ERROR, data length:%d\n", _sock, header->dataLength);
+			}break;
 			default:
-				header->cmd = CMD_ERROR;
-				header->dataLength = 0;
-				send(_cSock, (char*)&header, sizeof(header), 0);
+				//header->cmd = CMD_ERROR;
+				//header->dataLength = 0;
+				//send(_sock, (char*)&header, sizeof(header), 0);
+				printf("未定义消息\n");
 				break;
 			}
 	}
