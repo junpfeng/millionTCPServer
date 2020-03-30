@@ -21,6 +21,7 @@
 #include <vector>
 #include <stdio.h>
 #include "MessageHeader.hpp"
+#include "CELLTimestamp.hpp"
 
 // 缓冲区数据挖掘机的大小，为什么不直接用第二缓冲区接受内核缓冲区的数据？
 // 答：因为第二缓冲区的数据可能还没处理完，直接接受会有覆盖的风险，因此采用挖掘机当中介
@@ -30,9 +31,10 @@ const unsigned int MSG_BUFF_SZIE = 102400; // 100 kb
 
 class clientSocket {
 private:
-	SOCKET _cSock;
+	SOCKET _cSock;  // 每个客户端数据类，使用 _cSock 标记哪个客户端
 	char _MsgBuf[MSG_BUFF_SZIE];
-	int _lastPos;  // 指定第二缓冲区的已经使用长度
+	unsigned long long _lastPos;  // 指定第二缓冲区的已经使用长度
+
 public:
 	clientSocket(SOCKET cSock = INVALID_SOCKET) :_cSock(cSock), 
 		_lastPos(0), _MsgBuf{} 
@@ -68,7 +70,8 @@ private:
 	SOCKET _sock;
 	std::vector<clientSocket *> _clients;
 	char _RecvBuf[RECV_BUFF_SZIE];
-
+	CELLTimestamp _tTime;
+	unsigned int _recvCount;
 public:
 	EasyTcpServer() :_sock(INVALID_SOCKET), _RecvBuf{}
 	{
@@ -149,7 +152,7 @@ public:
 			return INVALID_SOCKET;
 		}else {  
 			NewUserJoin userjoin;
-			SendDataToAll(userjoin);  // 将新客户端加入的消息，群发出去
+			//SendDataToAll(userjoin);  // 将新客户端加入的消息，群发出去
 			_clients.push_back(new clientSocket(_cSock));
 			printf("new joiner<number %d> :socket = %d, IP = %s \n", _clients.size(), (int)_cSock, inet_ntoa(clientAddr.sin_addr));
 		}
@@ -192,6 +195,7 @@ public:
 			Accept();  // 接受新的连接请求
 		}
 
+		// 虽然新加入的客户端已经被加入服务端列表中，但是客户端是先建立连接的，再所有客户端建立完连接之前，没有发送其他消息。
 		for (int n = (int)_clients.size() - 1; n >= 0; --n) {
 			// 轮询判断是不是当前socket造成的事件触发
 			if (FD_ISSET(_clients[n]->getcSock(), &fdRead)) {
@@ -213,6 +217,16 @@ public:
 
 	// 处理数据体
 	virtual void ProcessNetMsg(SOCKET _cSock, DataHeader *header) {
+		// 每次调用该函数，表示读入了一次数据
+		_recvCount++;
+		auto t1 = _tTime.getElapsedTimeSecond();
+		// 每隔一秒，记录一次
+		if (t1 >= 1.0) {
+			printf("socket<%lf>, socket<%d>,_recvCount<%d>, connectedNum<%d>\n", t1, _sock, _recvCount, _clients.size());
+			_recvCount = 0;
+			_tTime.update();
+		}
+
 		// 解析数据头
 		//printf("收到命令：%d 数据长度 %d\n", header.cmd, header.dataLength);
 		switch (header->cmd)
@@ -247,9 +261,8 @@ public:
 
 
 	int RecvData(clientSocket * cSock) {
-
 		// 5.接受客户端数据
-		// 先接受数据头
+		// 将数据从内核缓冲区取出
 		int nlen = recv(cSock->getcSock(), _RecvBuf, RECV_BUFF_SZIE, 0);
 		if (nlen <= 0) {
 			printf("server socket = %d quit\n", cSock->getcSock());
@@ -264,12 +277,15 @@ public:
 			if (cSock->getLastPos() >= header->dataLength) {
 				// 第二缓冲区，剩余消息，提前保存
 				int RemainSize = cSock->getLastPos() - header->dataLength;
+				while (RemainSize < 0) {
+					int a = 1;
+				}
 				ProcessNetMsg(cSock->getcSock(), header);
 				memcpy(cSock->getMsgBuf(), _RecvBuf + header->dataLength, RemainSize);
 				cSock->setLastPos(RemainSize);
 			}
 			else {
-				// the remain msg not enough
+				// the  remain msg not enough
 				break;
 			}
 		}

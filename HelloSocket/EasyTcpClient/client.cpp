@@ -8,7 +8,7 @@ void cmdThread();// EasyTcpClient *client);
 int main() {
 
 	// FD_SETSIZE 表示默认最大select监听数量
-	const int nCount = 10;  // FD_SETSIZE - 1;
+	const int nCount = 1000;  // FD_SETSIZE - 1;
 	vector<EasyTcpClient *> clients;
 
 	for (int n = 0; n < nCount; ++n) {
@@ -37,9 +37,8 @@ int main() {
 	strcpy(login.PassWord, "123");
 	while (g_brun) {
 		for (int n = 0; n < nCount; ++n) {
-			
 			clients[n]->SendData(&login);
-			Sleep(1);
+			// Sleep(1);
 		}
 		 //if (!client.onRun())
 			//break;

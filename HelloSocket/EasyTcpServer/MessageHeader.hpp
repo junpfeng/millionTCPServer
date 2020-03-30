@@ -37,7 +37,7 @@ struct DataHeader {  // 作为所有数据报文的基类
 		cmd = CMD_ERROR;
 	}
 	CMD cmd;
-	short dataLength;  // 数据长度一般不大于 65535
+	unsigned long long dataLength;  // 单个TCP数据包的数据长度一般不大于 65535，但是连续的字节流就不止了。
 };
 struct Login :public DataHeader {  // 登录
 	Login() {
