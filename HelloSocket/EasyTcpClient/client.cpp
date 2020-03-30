@@ -1,6 +1,6 @@
 #include "EasyTcpClient.hpp"
 #include <thread>
-
+using namespace std;
 bool g_brun = true;
 
 void cmdThread();// EasyTcpClient *client);
@@ -8,13 +8,24 @@ void cmdThread();// EasyTcpClient *client);
 int main() {
 
 	// FD_SETSIZE 表示默认最大select监听数量
-	const int nCount = FD_SETSIZE - 1;
-	EasyTcpClient *client[nCount];
+	const int nCount = 10;  // FD_SETSIZE - 1;
+	vector<EasyTcpClient *> clients;
 
 	for (int n = 0; n < nCount; ++n) {
-		client[n] = new EasyTcpClient();
-		client[n]->initSocket();
-		client[n]->Connect("127.0.0.1", 4567);
+		clients.push_back(new EasyTcpClient());
+		clients[n]->initSocket();
+	}
+	for (int n = 0; n < nCount; ++n) {
+		// 运行中途退出
+		if (!g_brun) {
+			for (auto & x : clients) {
+				x->Close();
+				delete x;
+			}
+			clients.clear();
+			return 0;
+		}
+		clients[n]->Connect("127.0.0.1", 4567);
 	}
 
 	// 启动线程
@@ -27,18 +38,19 @@ int main() {
 	while (g_brun) {
 		for (int n = 0; n < nCount; ++n) {
 			
-			client[n]->SendData(&login);
+			clients[n]->SendData(&login);
+			Sleep(1);
 		}
 		 //if (!client.onRun())
 			//break;
 	}
-	for (int n = 0; n < nCount; ++n) {
-
-		client[n]->Close();
+	for (auto & x : clients) {
+		x->Close();
+		delete x;
 	}
+	clients.clear();
 	//client.Close();
 	printf("quit\n");
-	getchar();
 	return 0;
 }
 

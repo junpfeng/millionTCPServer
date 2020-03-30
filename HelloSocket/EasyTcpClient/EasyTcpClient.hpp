@@ -2,6 +2,7 @@
 #define _EASYTCPCLIENT_HPP_
 #ifdef _WIN32
 	// #pragma comment(lib, "ws2_32.lib")
+	#define FD_SETSIZE 1024
 	#define WIN32_LEAN_AND_MEAN  // 避免引入早期的重复定义
 	#define _WINSOCK_DEPRECATED_NO_WARNINGS
 	#define _CRT_SECURE_NO_WARNINGS

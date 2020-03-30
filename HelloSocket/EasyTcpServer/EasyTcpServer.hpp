@@ -3,6 +3,7 @@
 
 #ifdef _WIN32
 	// #pragma comment(lib, "ws2_32.lib")
+	#define FD_SETSIZE 1024  // 设置这个宏，修改中select最大复用套接字
 	#define WIN32_LEAN_AND_MEAN  // 避免引入早期的重复定义
 	#define _WINSOCK_DEPRECATED_NO_WARNINGS
 	#define _CRT_SECURE_NO_WARNINGS
@@ -150,7 +151,7 @@ public:
 			NewUserJoin userjoin;
 			SendDataToAll(userjoin);  // 将新客户端加入的消息，群发出去
 			_clients.push_back(new clientSocket(_cSock));
-			printf("新客户端加入:socket = %d, IP = %s \n", (int)_cSock, inet_ntoa(clientAddr.sin_addr));
+			printf("new joiner<number %d> :socket = %d, IP = %s \n", _clients.size(), (int)_cSock, inet_ntoa(clientAddr.sin_addr));
 		}
 		return _cSock;
 	}
@@ -209,7 +210,7 @@ public:
 		// printf("处理其他主线程业务...\n");
 		return 0;
 	}
-	
+
 	// 处理数据体
 	virtual void ProcessNetMsg(SOCKET _cSock, DataHeader *header) {
 		// 解析数据头
