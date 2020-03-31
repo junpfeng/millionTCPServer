@@ -22,7 +22,7 @@ int main() {
 	EasyTcpServer server;
 	server.initSocket();
 	server.Bind(nullptr, 4567);
-	server.Listen(5); // 最长监听队列5
+	server.Listen(10000); // 最长监听队列5
 
 	std::thread t1(cmdThread);
 	t1.detach();

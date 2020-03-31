@@ -8,7 +8,7 @@ void cmdThread();// EasyTcpClient *client);
 int main() {
 
 	// FD_SETSIZE 表示默认最大select监听数量
-	const int nCount = 1000;  // FD_SETSIZE - 1;
+	const int nCount = 10000;  // FD_SETSIZE - 1;
 	vector<EasyTcpClient *> clients;
 
 	for (int n = 0; n < nCount; ++n) {
