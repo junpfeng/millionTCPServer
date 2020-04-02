@@ -21,6 +21,7 @@
 class EasyTcpClient
 {
 	SOCKET _sock;
+	bool _isConnect;
 public:
 	EasyTcpClient()
 	{
@@ -103,7 +104,6 @@ public:
 	}
 
 	//处理网络消息
-	int _nCount = 0;
 	bool OnRun()
 	{
 		if (isRun())
@@ -113,7 +113,6 @@ public:
 			FD_SET(_sock, &fdReads);
 			timeval t = { 0,0 };
 			int ret = select(_sock + 1, &fdReads, 0, 0, &t);
-			//printf("select ret=%d count=%d\n", ret, _nCount++);
 			if (ret < 0)
 			{
 				printf("<socket=%d>select任务结束1\n", _sock);
@@ -144,7 +143,7 @@ public:
 	//缓冲区最小单元大小
 #ifndef RECV_BUFF_SZIE
 #define RECV_BUFF_SZIE 10240
-#endif // !RECV_BUFF_SZIE
+#endif 
 	//第二缓冲区 消息缓冲区
 	char _szMsgBuf[RECV_BUFF_SZIE * 5] = {};
 	//消息缓冲区的数据尾部位置
@@ -243,7 +242,7 @@ public:
 		return ret;
 	}
 private:
-	bool _isConnect;
+
 };
 
 #endif

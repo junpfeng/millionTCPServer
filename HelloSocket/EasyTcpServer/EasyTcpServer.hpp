@@ -20,21 +20,18 @@
 
 #include<stdio.h>
 #include<vector>
+#include <map>
 #include<thread>
 #include<mutex>
-// 原子操作库
-#include<atomic>
+#include<atomic>  // 原子操作库
 
 #include"MessageHeader.hpp"
-// c++11定时库
-#include"CELLTimestamp.hpp"
+#include"CELLTimestamp.hpp"  // c++11定时库
 
 //缓冲区最小单元大小
 #ifndef RECV_BUFF_SZIE
 #define RECV_BUFF_SZIE 10240
-#endif // !RECV_BUFF_SZIE
-
-#define _CellServer_THREAD_COUNT 4
+#endif 
 
 // 为每个连接的客户端建立一个缓存区对象
 class ClientSocket
@@ -66,6 +63,7 @@ public:
 		_lastPos = pos;
 	}
 
+	//  发生数据
 	int SendData(DataHeader* header)
 	{
 		if (header)
@@ -90,11 +88,12 @@ public:
 	//纯虚函数
 	//客户端离开事件
 	virtual void onNetJoin(ClientSocket *pClient) = 0;
-	virtual void OnLeave(ClientSocket* pClient) = 0;
+	virtual void OnNetLeave(ClientSocket* pClient) = 0;
 	virtual void OnNetMsg(ClientSocket * pClient, DataHeader* header) = 0;
 private:
 
 };
+
 
 // 原本主线程中循环处理所有的客户端连接，如今将每个连接交给子线程，
 // 为子线程封装一个对象，用于处理客户端连接
@@ -104,7 +103,8 @@ public:
 	CellServer(SOCKET sock = INVALID_SOCKET)
 	{
 		_sock = sock;
-		_pNetEvent = nullptr;
+		_pNetEvent = nullptr;  // 
+		_clients_change = true;
 	}
 
 	~CellServer()
@@ -112,7 +112,6 @@ public:
 		Close();
 		_sock = INVALID_SOCKET;
 	}
-
 	// 这个是用于将虚基类指向不同实现的子类
 	void setEventObj(INetEvent* event)
 	{
@@ -131,9 +130,7 @@ public:
 				delete _clients[n];
 			}
 			// 8 关闭套节字closesocket
-			closesocket(_sock);
-			//------------
-			//清除Windows socket环境交给主线程去完成
+			closesocket(_sock);  //清除Windows socket环境交给主线程去完成
 #else
 			for (int n = (int)_clients.size() - 1; n >= 0; n--)
 			{
@@ -153,20 +150,21 @@ public:
 		return _sock != INVALID_SOCKET;
 	}
 
-	//处理网络消息
-	//int _nCount = 0;
+
 	bool OnRun()
 	{
 		while (isRun())
 		{
-			//再把客户端从_clientsBuff转移到_clients,从缓冲队列里取出客户数据
+			// 有新客户端加入
+			// 再把客户端从_clientsBuff转移到_clients,从缓冲队列里取出客户数据
 			if (_clientsBuff.size() > 0)
 			{
+				_clients_change = true;
 				// 自解锁
 				std::lock_guard<std::mutex> lock(_mutex);
 				for (auto pClient : _clientsBuff)
 				{
-					_clients.push_back(pClient);
+					_clients[pClient->sockfd()] = pClient;
 				}
 				_clientsBuff.clear();
 			}
@@ -186,43 +184,77 @@ public:
 			fd_set fdRead;//描述符（socket） 集合
 						  //清理集合
 			FD_ZERO(&fdRead);
-			//将描述符（socket）加入集合
-			SOCKET maxSock = _clients[0]->sockfd();
-			for (int n = (int)_clients.size() - 1; n >= 0; n--)
-			{
-				FD_SET(_clients[n]->sockfd(), &fdRead);
-				if (maxSock < _clients[n]->sockfd())
+			// 只有当客户端集合发送改变时，再像监听事件集合中放东西
+			if (_clients_change) {
+				_clients_change = false;
+				_maxSock = _clients.begin()->second->sockfd();
+				for (auto iter : _clients)
 				{
-					maxSock = _clients[n]->sockfd();
+					FD_SET(iter.second->sockfd(), &fdRead);
+					if (_maxSock < iter.second->sockfd())
+					{
+						_maxSock = iter.second->sockfd();
+					}
 				}
+				memcpy(&_fdRead_bak, &fdRead, sizeof(fd_set));
 			}
+			else {
+				memcpy(&fdRead, &_fdRead_bak, sizeof(fd_set));
+			}
+
 			///nfds 是一个整数值 是指fd_set集合中所有描述符(socket)的范围，而不是数量
 			///既是所有文件描述符最大值+1 在Windows中这个参数可以写0
-			int ret = select(maxSock + 1, &fdRead, nullptr, nullptr, nullptr);
-			if (ret < 0)
+			int ret = select(_maxSock + 1, &fdRead, nullptr, nullptr, nullptr);
+			if (0 > ret)
 			{
 				printf("select任务结束。\n");
 				Close();
 				return false;
 			}
+			else if (0 == ret) {
+				continue;
+			}
 
-			for (int n = (int)_clients.size() - 1; n >= 0; n--)
+#ifdef _WIN32
+			for (int n = 0; n < fdRead.fd_count; n++)
 			{
-				if (FD_ISSET(_clients[n]->sockfd(), &fdRead))
+				auto iter = _clients.find(fdRead.fd_array[n]);
+				if (iter != _clients.end())
 				{
-					if (-1 == RecvData(_clients[n]))
+					if (-1 == RecvData(iter->second))
 					{
-						auto iter = _clients.begin() + n;//std::vector<SOCKET>::iterator
-						if (iter != _clients.end())
-						{
-							if (_pNetEvent)
-								_pNetEvent->OnLeave(_clients[n]);
-							delete _clients[n];
-							_clients.erase(iter);
-						}
+						if (_pNetEvent)
+							_pNetEvent->OnNetLeave(iter->second);
+						_clients_change = true;
+						_clients.erase(iter->first);
+					}
+				}
+				else {
+					printf("error. if (iter != _clients.end())\n");
+				}
+
+			}
+#else
+			std::vector<ClientSocket*> temp;
+			for (auto iter : _clients)
+			{
+				if (FD_ISSET(iter.second->sockfd(), &fdRead))
+				{
+					if (-1 == RecvData(iter.second))
+					{
+						if (_pNetEvent)
+							_pNetEvent->OnNetLeave(iter.second);
+						_clients_change = false;
+						temp.push_back(iter.second);
 					}
 				}
 			}
+			for (auto pClient : temp)
+			{
+				_clients.erase(pClient->sockfd());
+				delete pClient;
+			}
+#endif
 		}
 	}
 	//缓冲区
@@ -271,37 +303,36 @@ public:
 	//响应网络消息
 	virtual void OnNetMsg(ClientSocket *pClient, DataHeader* header)
 	{
-		//_recvCount++;
 		_pNetEvent->OnNetMsg(pClient, header);
-		switch (header->cmd)
-		{
-		case CMD_LOGIN:
-		{
+		//switch (header->cmd)
+		//{
+		//case CMD_LOGIN:
+		//{
 
-			Login* login = (Login*)header;
-			//printf("收到客户端<Socket=%d>请求：CMD_LOGIN,数据长度：%d,userName=%s PassWord=%s\n", cSock, login->dataLength, login->userName, login->PassWord);
-			//忽略判断用户密码是否正确的过程
-			LoginResult ret;
-			pClient->SendData(&ret);
-		}
-		break;
-		case CMD_LOGOUT:
-		{
-			Logout* logout = (Logout*)header;
-			//printf("收到客户端<Socket=%d>请求：CMD_LOGOUT,数据长度：%d,userName=%s \n", cSock, logout->dataLength, logout->userName);
-			//忽略判断用户密码是否正确的过程
-			LogoutResult ret;
-			pClient->SendData(&ret);
-		}
-		break;
-		default:
-		{
-			printf("<socket=%d>收到未定义消息,数据长度：%d\n", pClient->sockfd(), header->dataLength);
-			DataHeader ret;
-			pClient->SendData(&ret);
-		}
-		break;
-		}
+		//	Login* login = (Login*)header;
+		//	//printf("收到客户端<Socket=%d>请求：CMD_LOGIN,数据长度：%d,userName=%s PassWord=%s\n", cSock, login->dataLength, login->userName, login->PassWord);
+		//	//忽略判断用户密码是否正确的过程
+		//	LoginResult ret;
+		//	pClient->SendData(&ret);
+		//}
+		//break;
+		//case CMD_LOGOUT:
+		//{
+		//	Logout* logout = (Logout*)header;
+		//	//printf("收到客户端<Socket=%d>请求：CMD_LOGOUT,数据长度：%d,userName=%s \n", cSock, logout->dataLength, logout->userName);
+		//	//忽略判断用户密码是否正确的过程
+		//	LogoutResult ret;
+		//	pClient->SendData(&ret);
+		//}
+		//break;
+		//default:
+		//{
+		//	printf("<socket=%d>收到未定义消息,数据长度：%d\n", pClient->sockfd(), header->dataLength);
+		//	DataHeader ret;
+		//	pClient->SendData(&ret);
+		//}
+		//break;
+		//}
 	}
 
 	void addClient(ClientSocket* pClient)
@@ -332,7 +363,8 @@ private:
 	// 这个_sock只是为了标记主线程监听的套接字是哪个，在子线程目前没什么实际作用
 	SOCKET _sock;
 	//正式客户队列
-	std::vector<ClientSocket*> _clients;
+	std::map<SOCKET, ClientSocket*> _clients;
+	// std::vector<ClientSocket*> _clients;
 	//缓冲客户队列
 	std::vector<ClientSocket*> _clientsBuff;
 	// 缓存队列锁
@@ -341,7 +373,12 @@ private:
 	std::thread _thread;
 	// 网络事件对象
 	INetEvent* _pNetEvent;
-public:
+private:
+	// 备份读事件集合
+	fd_set _fdRead_bak;
+	// 标记读事件集合是否发生变化
+	bool _clients_change;
+	SOCKET _maxSock;
 	
 };
 
@@ -608,7 +645,7 @@ public:
 	//}
 
 	// 将 pclient 从某个线程监听的客户端集合中移除
-	virtual void OnLeave(ClientSocket* pClient)
+	virtual void OnNetLeave(ClientSocket* pClient)
 	{
 		// 主线程不再清除连接的客户端
 		_clientCount--;
