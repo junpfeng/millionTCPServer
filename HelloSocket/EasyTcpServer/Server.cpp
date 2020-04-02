@@ -1,38 +1,46 @@
 #include "EasyTcpServer.hpp"
-#include <thread>
-bool g_bRun = true;
-// 服务端设置一个提供主动关闭的多线程
-void cmdThread() {
-	while (1) {
-		char cmdBuf[256];
+#include<thread>
 
-		scanf("%s", cmdBuf); 
-		if (0 == strcmp(cmdBuf, "exit")) {
+bool g_bRun = true;
+void cmdThread()
+{
+	while (true)
+	{
+		char cmdBuf[256] = {};
+		scanf("%s", cmdBuf);
+		if (0 == strcmp(cmdBuf, "exit"))
+		{
 			g_bRun = false;
-			printf("线程退出\n");
-			return;
+			printf("退出cmdThread线程\n");
+			break;
 		}
 		else {
-			printf("command not support\n");
+			printf("不支持的命令。\n");
 		}
 	}
 }
 
-int main() {
+int main()
+{
+	// server是服务器程序中的主线程
 	EasyTcpServer server;
-	server.initSocket();
+	server.InitSocket();
 	server.Bind(nullptr, 4567);
-	server.Listen(10000); // 最长监听队列5
+	server.Listen(5);
+	// 创建四个子线程
+	server.Start(4);
 
+	//启动UI线程
 	std::thread t1(cmdThread);
 	t1.detach();
-	while (g_bRun) {
-		server.WaitNetMsg();
-	}
 
+	while (g_bRun)
+	{
+		server.OnRun();
+		//printf("空闲时间处理其它业务..\n");
+	}
 	server.Close();
-	printf("quit\n");
+	printf("已退出。\n");
 	getchar();
 	return 0;
 }
- 
