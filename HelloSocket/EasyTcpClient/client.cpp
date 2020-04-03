@@ -49,7 +49,7 @@ void sendThread(int id)
 	printf("thread<%d>,Connect=%d\n", id);
 	std::chrono::milliseconds t(3000);
 	std::this_thread::sleep_for(t);
-	const int SL = 1;
+	const int SL = 5;
 	Login login[SL];
 	for (int n = 0; n < SL; n++)
 	{

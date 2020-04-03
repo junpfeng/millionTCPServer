@@ -2,7 +2,7 @@
 #define _EasyTcpServer_hpp_
 
 #ifdef _WIN32
-	#define FD_SETSIZE      25060
+	#define FD_SETSIZE   10240
 	#define WIN32_LEAN_AND_MEAN
 	#define _WINSOCK_DEPRECATED_NO_WARNINGS
 	#include<windows.h>
@@ -30,7 +30,8 @@
 
 //缓冲区最小单元大小
 #ifndef RECV_BUFF_SZIE
-#define RECV_BUFF_SZIE 10240
+#define RECV_BUFF_SZIE 10240*5
+#define SEND_BUFF_SZIE RECV_BUFF_SZIE
 #endif 
 
 // 为每个连接的客户端建立一个缓存区对象
@@ -40,8 +41,13 @@ public:
 	ClientSocket(SOCKET sockfd = INVALID_SOCKET)
 	{
 		_sockfd = sockfd;
-		memset(_szMsgBuf, 0, sizeof(_szMsgBuf));
+		// 初始化为0
+		memset(_szMsgBuf, 0, RECV_BUFF_SZIE);
 		_lastPos = 0;
+
+		// 初始化为0
+		memset(_szSendBuf, 0, SEND_BUFF_SZIE);
+		_lastSendPos = 0;
 	}
 
 	SOCKET sockfd()
@@ -63,23 +69,62 @@ public:
 		_lastPos = pos;
 	}
 
-	//  发生数据
+	// 定量发生数据
+	// 当要发送的数据累计超过了发送缓冲区的大小（定量）,就发送
 	int SendData(DataHeader* header)
 	{
-		if (header)
+		int ret = SOCKET_ERROR;
+		//要发送的数据长度
+		int nSendLen = header->dataLength;
+		//要发送的数据
+		const char* pSendData = (const char*)header;
+
+		while (true)
 		{
-			return send(_sockfd, (const char*)header, header->dataLength, 0);
+			// 待发送数据超过了缓冲区
+			if (_lastSendPos + nSendLen >= SEND_BUFF_SZIE)
+			{
+				//计算可拷贝的数据长度
+				int nCopyLen = SEND_BUFF_SZIE - _lastSendPos;
+				//拷贝数据
+				memcpy(_szSendBuf + _lastSendPos, pSendData, nCopyLen);
+				//计算剩余数据位置
+				pSendData += nCopyLen;
+				//计算剩余数据长度
+				nSendLen -= nSendLen;
+				//发送数据
+				ret = send(_sockfd, _szSendBuf, SEND_BUFF_SZIE, 0);
+				//数据尾部位置清零
+				_lastSendPos = 0;
+				//发送错误
+				if (SOCKET_ERROR == ret)
+				{
+					return ret;
+				}
+			}
+			// 发送缓冲区未满
+			else {
+				//将要发送的数据 拷贝到发送缓冲区尾部
+				memcpy(_szSendBuf + _lastSendPos, pSendData, nSendLen);
+				//计算数据尾部位置
+				_lastSendPos += nSendLen;
+				break;
+			}
 		}
-		return SOCKET_ERROR;
+		return ret;
 	}
 
 private:
 	// socket fd_set  file desc set
 	SOCKET _sockfd;
 	//第二缓冲区 消息缓冲区
-	char _szMsgBuf[RECV_BUFF_SZIE * 5];
+	char _szMsgBuf[RECV_BUFF_SZIE];
 	//消息缓冲区的数据尾部位置
 	int _lastPos;
+	//第二缓冲区 发送缓冲区
+	char _szSendBuf[SEND_BUFF_SZIE];
+	//发送缓冲区的数据尾部位置
+	int _lastSendPos;
 };
 
 class INetEvent
@@ -90,6 +135,8 @@ public:
 	virtual void onNetJoin(ClientSocket *pClient) = 0;
 	virtual void OnNetLeave(ClientSocket* pClient) = 0;
 	virtual void OnNetMsg(ClientSocket * pClient, DataHeader* header) = 0;
+
+	virtual void OnNetRecv(ClientSocket * pClient) = 0;
 private:
 
 };
@@ -264,6 +311,8 @@ public:
 	{
 		// 5 接收客户端数据
 		int nLen = (int)recv(pClient->sockfd(), _szRecv, RECV_BUFF_SZIE, 0);
+		_pNetEvent->OnNetRecv(pClient);
+
 		//printf("nLen=%d\n", nLen);
 		if (nLen <= 0)
 		{
@@ -396,12 +445,15 @@ private:
 	std::atomic_int _recvCount;
 	// 客户端计数
 	std::atomic_int _clientCount;
+	// 接受消息计数
+	std::atomic_int _msgCount;
 public:
 	EasyTcpServer()
 	{
 		_sock = INVALID_SOCKET;
 		_recvCount = 0;
 		_clientCount = 0;
+		_msgCount = 0;
 	}
 	virtual ~EasyTcpServer()
 	{
@@ -626,8 +678,9 @@ public:
 		if (t1 >= 1.0)
 		{
 			// 第几个线程，时间，服务器的监听套接字，客户端的数量，每秒所有线程总共处理的数据包数（每一个登录消息体，处理一次）。
-			printf("thread<%d>,time<%lf>,socket<%d>,clients<%d>,recvCount<%d>\n", _cellServers.size(), t1, _sock, (int)_clientCount, (int)(_recvCount / t1));
+			printf("thread<%d>,time<%lf>,socket<%d>,clients<%d>,recvCount<%d>,msg<%d>\n", _cellServers.size(), t1, _sock, (int)_clientCount, (int)(_recvCount / t1), (int)(_msgCount/t1));
 			_recvCount = 0;
+			_msgCount = 0;
 			_tTime.update();
 		}
 	}
@@ -653,10 +706,14 @@ public:
 	}
 	virtual void OnNetMsg(ClientSocket * pClient, DataHeader* header)
 	{
-		_recvCount++;
+		_msgCount++;
 	}
 	virtual void onNetJoin(ClientSocket *pClient) {
 		_clientCount++;
+	}
+
+	virtual void OnNetRecv(ClientSocket * pClient) {
+		_recvCount++;
 	}
 };
 
