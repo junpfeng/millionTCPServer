@@ -1,40 +1,62 @@
-#ifndef _CELLTIMESTAMP_HPP_
-#define _CELLTIMESTAMP_HPP_
-#include <chrono>  // c++11 定时器
+#ifndef _CELLTimestamp_hpp_
+#define _CELLTimestamp_hpp_
+
+//#include <windows.h>
+#include<chrono>
 using namespace std::chrono;
 
-class CELLTimestamp {
-
+class CELLTimestamp
+{
 public:
-	CELLTimestamp() {
+	CELLTimestamp()
+	{
+		//QueryPerformanceFrequency(&_frequency);
+		//QueryPerformanceCounter(&_startCount);
 		update();
 	}
-	virtual ~CELLTimestamp() {
+	~CELLTimestamp()
+	{}
 
-	}
-
-	void update() {
+	void    update()
+	{
+		//QueryPerformanceCounter(&_startCount);
 		_begin = high_resolution_clock::now();
 	}
-
-	// 获取以秒为单位的，当前时间与对象建立之初的时间之差
-	double getElapsedTimeSecond() {
-		return getElapsedTimeInMicroSec()*0.000001;
+	/**
+	*   获取当前秒
+	*/
+	double getElapsedSecond()
+	{
+		return  getElapsedTimeInMicroSec() * 0.000001;
 	}
-
-	// 获取以毫秒为单位的，当前时间与对象建立之初的时间之差
-	double getElapsedTimeInMilliSec() {
-		return getElapsedTimeInMicroSec()*0.001;
+	/**
+	*   获取毫秒
+	*/
+	double getElapsedTimeInMilliSec()
+	{
+		return this->getElapsedTimeInMicroSec() * 0.001;
 	}
+	/**
+	*   获取微妙
+	*/
+	long long getElapsedTimeInMicroSec()
+	{
+		/*
+		LARGE_INTEGER endCount;
+		QueryPerformanceCounter(&endCount);
 
-	// 获取以微秒为单位的，当前时间与对象建立之初的时间之差
-	long long getElapsedTimeInMicroSec() {
+		double  startTimeInMicroSec =   _startCount.QuadPart * (1000000.0 / _frequency.QuadPart);
+		double  endTimeInMicroSec   =   endCount.QuadPart * (1000000.0 / _frequency.QuadPart);
+
+		return  endTimeInMicroSec - startTimeInMicroSec;
+		*/
+
 		return duration_cast<microseconds>(high_resolution_clock::now() - _begin).count();
 	}
-
 protected:
-	// 底层高精度时间变量
+	//LARGE_INTEGER   _frequency;
+	//LARGE_INTEGER   _startCount;
 	time_point<high_resolution_clock> _begin;
 };
 
-#endif
+#endif // !_CELLTimestamp_hpp_

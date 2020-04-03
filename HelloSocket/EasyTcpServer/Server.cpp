@@ -3,7 +3,7 @@
 
 bool g_bRun = true;
 void cmdThread()
-{
+{//
 	while (true)
 	{
 		char cmdBuf[256] = {};
@@ -20,14 +20,75 @@ void cmdThread()
 	}
 }
 
+class MyServer : public EasyTcpServer
+{
+public:
+
+	//只会被一个线程触发 安全
+	virtual void OnNetJoin(ClientSocket* pClient)
+	{
+		_clientCount++;
+		//printf("client<%d> join\n", pClient->sockfd());
+	}
+	//cellServer 4 多个线程触发 不安全
+	//如果只开启1个cellServer就是安全的
+	virtual void OnNetLeave(ClientSocket* pClient)
+	{
+		_clientCount--;
+		//printf("client<%d> leave\n", pClient->sockfd());
+	}
+	//cellServer 4 多个线程触发 不安全
+	//如果只开启1个cellServer就是安全的
+	virtual void OnNetMsg(ClientSocket* pClient, DataHeader* header)
+	{
+		_msgCount++;
+		switch (header->cmd)
+		{
+		case CMD_LOGIN:
+		{
+			//send recv 
+			Login* login = (Login*)header;
+			//printf("收到客户端<Socket=%d>请求：CMD_LOGIN,数据长度：%d,userName=%s PassWord=%s\n", cSock, login->dataLength, login->userName, login->PassWord);
+			//忽略判断用户密码是否正确的过程
+			LoginResult ret;
+			pClient->SendData(&ret);
+		}//接收 消息---处理 发送   生产者 数据缓冲区  消费者 
+		break;
+		case CMD_LOGOUT:
+		{
+			Logout* logout = (Logout*)header;
+			//printf("收到客户端<Socket=%d>请求：CMD_LOGOUT,数据长度：%d,userName=%s \n", cSock, logout->dataLength, logout->userName);
+			//忽略判断用户密码是否正确的过程
+			//LogoutResult ret;
+			//SendData(cSock, &ret);
+		}
+		break;
+		default:
+		{
+			printf("<socket=%d>收到未定义消息,数据长度：%d\n", pClient->sockfd(), header->dataLength);
+			//DataHeader ret;
+			//SendData(cSock, &ret);
+		}
+		break;
+		}
+	}
+
+	virtual void OnNetRecv(ClientSocket* pClient)
+	{
+		_recvCount++;
+		//printf("client<%d> leave\n", pClient->sockfd());
+	}
+private:
+
+};
+
 int main()
 {
-	// server是服务器程序中的主线程
-	EasyTcpServer server;
+
+	MyServer server;
 	server.InitSocket();
 	server.Bind(nullptr, 4567);
 	server.Listen(5);
-	// 创建四个子线程
 	server.Start(4);
 
 	//启动UI线程
