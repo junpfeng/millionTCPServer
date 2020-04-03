@@ -138,12 +138,12 @@ public:
 	//是否工作中
 	bool isRun()
 	{
-		return _sock != INVALID_SOCKET;
+		return _sock != INVALID_SOCKET && _isConnect;
 	}
 	//缓冲区最小单元大小
 #ifndef RECV_BUFF_SZIE
 #define RECV_BUFF_SZIE 10240
-#endif 
+#endif // !RECV_BUFF_SZIE
 	//第二缓冲区 消息缓冲区
 	char _szMsgBuf[RECV_BUFF_SZIE * 5] = {};
 	//消息缓冲区的数据尾部位置
@@ -233,9 +233,9 @@ public:
 		int ret = SOCKET_ERROR;
 		if (isRun() && header)
 		{
-			// 判断是否发送成功
-			ret =  send(_sock, (const char*)header, nLen, 0);
-			if (SOCKET_ERROR == ret) {
+			ret = send(_sock, (const char*)header, nLen, 0);
+			if (SOCKET_ERROR == ret)
+			{
 				Close();
 			}
 		}
