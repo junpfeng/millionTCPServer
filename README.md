@@ -1,4 +1,9 @@
 # millionTCPServer
+## 结构
+* master 分支发布稳定版本
+* dev_Linux 分支用于Linux环境下的开发
+* dev_win 分支用于windows环境下的开发
+* dev 分支用于合并同时兼任Linux和windows的版本
 
 ## 网络数据包
 
