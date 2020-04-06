@@ -3,4 +3,9 @@ temp
 .vs
 *.vc*
 *.pdb*
-README.md
+# README.md
+# HelloSocket
+HelloThread
+HelloMemory
+HelloEpoll
+*.sln

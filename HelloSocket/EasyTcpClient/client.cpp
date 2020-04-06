@@ -53,8 +53,8 @@ void sendThread(int id)
 	Login login[SL];
 	for (int n = 0; n < SL; n++)
 	{
-		strcpy(login[n].userName, "lyd");
-		strcpy(login[n].PassWord, "lydmm");
+		strcpy(login[n].userName, "xinyeox");
+		strcpy(login[n].PassWord, "123");
 	}
 	const int nLen = sizeof(login);
 	while (g_bRun)
