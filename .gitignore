@@ -4,3 +4,7 @@ temp
 *.vc*
 *.pdb*
 README.md
+HelloMemory
+HelloThread
+HelloEpoll
+*.sln
