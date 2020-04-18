@@ -1,5 +1,7 @@
 #include "EasyTcpClient.hpp"
 #include<thread>
+#include <memory>
+using namespace std;
 
 bool g_bRun = true;
 void cmdThread()
@@ -25,7 +27,8 @@ const int cCount = 10000;
 //发送线程数量
 const int tCount = 4;
 //客户端数组
-EasyTcpClient* client[cCount];
+// EasyTcpClient* client[cCount];
+shared_ptr<EasyTcpClient> client[cCount];
 
 void sendThread(int id)
 {
@@ -37,7 +40,8 @@ void sendThread(int id)
 
 	for (int n = begin; n < end; n++)
 	{
-		client[n] = new EasyTcpClient();
+		// client[n] = new EasyTcpClient();
+		client[n] = make_shared<EasyTcpClient>();
 	}
 	for (int n = begin; n < end; n++)
 	{
@@ -69,7 +73,7 @@ void sendThread(int id)
 	for (int n = begin; n < end; n++)
 	{
 		client[n]->Close();
-		delete client[n];
+		// delete client[n];
 	}
 
 	printf("thread<%d>,exit\n", id);
@@ -87,7 +91,7 @@ int main()
 		std::thread t1(sendThread, n + 1);
 		t1.detach();
 	}
-
+	
 	while (g_bRun)
 		Sleep(100);
 

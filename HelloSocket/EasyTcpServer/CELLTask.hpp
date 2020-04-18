@@ -26,12 +26,14 @@ private:
 
 };
 
+typedef std::shared_ptr<CellTask> CellTaskPtr;
+
 // 处理任务的类
 class CellTaskServer {
 private:
-	std::list<CellTask*> _taskList;
+	std::list<CellTaskPtr> _taskList;
 	// 生产者消费者 任务缓冲区
-	std::list<CellTask*> _taskBuf;
+	std::list<CellTaskPtr> _taskBuf;
 	// 从数据缓冲区存取数据时，加锁。
 	std::mutex _mutex;
 public:
@@ -45,7 +47,7 @@ public:
 	}
 
 	// 添加任务
-	void addTask(CellTask * task) {
+	void addTask(CellTaskPtr task) {
 		//_mutex.lock();
 		std::lock_guard<std::mutex> lgm(_mutex);
 		_taskBuf.push_back(task);
@@ -85,7 +87,7 @@ protected:
 		// 处理任务，基于链表的特点进行遍历，兼容性不够，故采用通用遍历方法
 		for (auto & pTask : _taskList) {
 			pTask->doTask();
-			delete pTask;
+			// delete pTask;
 		}
 		_taskList.clear();
 		

@@ -27,21 +27,23 @@ class MyServer : public EasyTcpServer
 public:
 
 	//只会被一个线程触发 安全
-	virtual void OnNetJoin(ClientSocket* pClient)
+	virtual void OnNetJoin(std::shared_ptr<ClientSocket>& pClient)
 	{
-		_clientCount++;
+		// _clientCount++;
+		EasyTcpServer::OnNetJoin(pClient);
 		//printf("client<%d> join\n", pClient->sockfd());
 	}
 	//cellServer 4 多个线程触发 不安全
 	//如果只开启1个cellServer就是安全的
-	virtual void OnNetLeave(ClientSocket* pClient)
+	virtual void OnNetLeave(std::shared_ptr<ClientSocket>& pClient)
 	{
-		_clientCount--;
+		// _clientCount--;
+		EasyTcpServer::OnNetLeave(pClient);
 		//printf("client<%d> leave\n", pClient->sockfd());
 	}
 	//cellServer 4 多个线程触发 不安全
 	//如果只开启1个cellServer就是安全的
-	virtual void OnNetMsg(CellServer* pCellServer, ClientSocket* pClient, DataHeader* header)
+	virtual void OnNetMsg(CellServer * pCellServer, std::shared_ptr<ClientSocket>& pClient, DataHeader* header)
 	{
 		// _msgCount++;
 		EasyTcpServer::OnNetMsg(pCellServer, pClient, header);
@@ -51,10 +53,12 @@ public:
 		{
 			//send recv 
 			Login* login = (Login*)header;
-			//printf("收到客户端<Socket=%d>请求：CMD_LOGIN,数据长度：%d,userName=%s PassWord=%s\n", cSock, login->dataLength, login->userName, login->PassWord);
-			//忽略判断用户密码是否正确的过程
-			LoginResult ret;
-			pClient->SendData(&ret);
+			// printf("收到客户端<Socket=%d>请求：CMD_LOGIN,数据长度：%d,userName=%s PassWord=%s\n", cSock, login->dataLength, login->userName, login->PassWord);
+			// 忽略判断用户密码是否正确的过程
+			// LoginResult ret;
+			// pClient->SendData(&ret);
+			auto ret = (DataHeaderPtr)std::make_shared<LoginResult>();
+			pCellServer->addSendTask(pClient, ret);
 		}//接收 消息---处理 发送   生产者 数据缓冲区  消费者 
 		break;
 		case CMD_LOGOUT:
@@ -76,7 +80,7 @@ public:
 		}
 	}
 
-	virtual void OnNetRecv(ClientSocket* pClient)
+	virtual void OnNetRecv(std::shared_ptr<ClientSocket>& pClient)
 	{
 		_recvCount++;
 		//printf("client<%d> leave\n", pClient->sockfd());
