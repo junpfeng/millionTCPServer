@@ -20,66 +20,57 @@ void cmdThread()
 	}
 }
 
-// 基于EasyTcpSercer 自定义自己的server，并重写必要的方法。
-// 这样子的操作符合编程规范：只增不减的原则。
 class MyServer : public EasyTcpServer
 {
 public:
 
 	//只会被一个线程触发 安全
-	virtual void OnNetJoin(ClientSocket* pClient)
+	virtual void OnNetJoin(CellClient* pClient)
 	{
-		_clientCount++;
-		//printf("client<%d> join\n", pClient->sockfd());
+		EasyTcpServer::OnNetJoin(pClient);
 	}
 	//cellServer 4 多个线程触发 不安全
 	//如果只开启1个cellServer就是安全的
-	virtual void OnNetLeave(ClientSocket* pClient)
+	virtual void OnNetLeave(CellClient* pClient)
 	{
-		_clientCount--;
-		//printf("client<%d> leave\n", pClient->sockfd());
+		EasyTcpServer::OnNetLeave(pClient);
 	}
 	//cellServer 4 多个线程触发 不安全
 	//如果只开启1个cellServer就是安全的
-	virtual void OnNetMsg(CellServer* pCellServer, ClientSocket* pClient, DataHeader* header)
+	virtual void OnNetMsg(CellServer* pCellServer, CellClient* pClient, netmsg_DataHeader* header)
 	{
-		// _msgCount++;
 		EasyTcpServer::OnNetMsg(pCellServer, pClient, header);
 		switch (header->cmd)
 		{
 		case CMD_LOGIN:
 		{
 			//send recv 
-			Login* login = (Login*)header;
+			netmsg_Login* login = (netmsg_Login*)header;
 			//printf("收到客户端<Socket=%d>请求：CMD_LOGIN,数据长度：%d,userName=%s PassWord=%s\n", cSock, login->dataLength, login->userName, login->PassWord);
 			//忽略判断用户密码是否正确的过程
-			LoginResult ret;
-			pClient->SendData(&ret);
+			//netmsg_LoginR ret;
+			//pClient->SendData(&ret);
+			netmsg_LoginR* ret = new netmsg_LoginR();
+			pCellServer->addSendTask(pClient, ret);
 		}//接收 消息---处理 发送   生产者 数据缓冲区  消费者 
 		break;
 		case CMD_LOGOUT:
 		{
-			Logout* logout = (Logout*)header;
+			netmsg_Logout* logout = (netmsg_Logout*)header;
 			//printf("收到客户端<Socket=%d>请求：CMD_LOGOUT,数据长度：%d,userName=%s \n", cSock, logout->dataLength, logout->userName);
 			//忽略判断用户密码是否正确的过程
-			//LogoutResult ret;
+			//netmsg_LogoutR ret;
 			//SendData(cSock, &ret);
 		}
 		break;
 		default:
 		{
 			printf("<socket=%d>收到未定义消息,数据长度：%d\n", pClient->sockfd(), header->dataLength);
-			//DataHeader ret;
+			//netmsg_DataHeader ret;
 			//SendData(cSock, &ret);
 		}
 		break;
 		}
-	}
-
-	virtual void OnNetRecv(ClientSocket* pClient)
-	{
-		_recvCount++;
-		//printf("client<%d> leave\n", pClient->sockfd());
 	}
 private:
 
@@ -89,7 +80,6 @@ int main()
 {
 
 	MyServer server;
-	// EasyTcpServer server;
 	server.InitSocket();
 	server.Bind(nullptr, 4567);
 	server.Listen(5);

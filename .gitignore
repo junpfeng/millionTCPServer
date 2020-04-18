@@ -3,8 +3,6 @@ temp
 .vs
 *.vc*
 *.pdb*
-# README.md
-# HelloSocket
 HelloThread
 HelloMemory
 HelloEpoll
