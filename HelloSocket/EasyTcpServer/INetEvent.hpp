@@ -1,23 +1,23 @@
 #ifndef _I_NET_EVENT_HPP_
 #define _I_NET_EVENT_HPP_
 
-#include"Cell.hpp"
-#include"CellClient.hpp"
-//自定义
+#include"CELL.hpp"
+#include"CELLClient.hpp"
+//锟皆讹拷锟斤拷
 class CellServer;
 
-//网络事件接口
+//锟斤拷锟斤拷锟铰硷拷锟接匡拷
 class INetEvent
 {
 public:
-	//纯虚函数
-	//客户端加入事件
+	//锟斤拷锟介函锟斤拷
+	//锟酵伙拷锟剿硷拷锟斤拷锟铰硷拷
 	virtual void OnNetJoin(CellClient* pClient) = 0;
-	//客户端离开事件
+	//锟酵伙拷锟斤拷锟诫开锟铰硷拷
 	virtual void OnNetLeave(CellClient* pClient) = 0;
-	//客户端消息事件
+	//锟酵伙拷锟斤拷锟斤拷息锟铰硷拷
 	virtual void OnNetMsg(CellServer* pCellServer, CellClient* pClient, netmsg_DataHeader* header) = 0;
-	//recv事件
+	//recv锟铰硷拷
 	virtual void OnNetRecv(CellClient* pClient) = 0;
 private:
 

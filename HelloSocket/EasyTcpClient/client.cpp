@@ -13,23 +13,23 @@ void cmdThread()
 		if (0 == strcmp(cmdBuf, "exit"))
 		{
 			g_bRun = false;
-			printf("ÍË³öcmdThreadÏß³Ì\n");
+			printf("ï¿½Ë³ï¿½cmdThreadï¿½ß³ï¿½\n");
 			break;
 		}
 		else {
-			printf("²»Ö§³ÖµÄÃüÁî¡£\n");
+			printf("ï¿½ï¿½Ö§ï¿½Öµï¿½ï¿½ï¿½ï¿½î¡£\n");
 		}
 	}
 }
 
-//¿Í»§¶ËÊýÁ¿
+//ï¿½Í»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 const int cCount = 1000;
-//·¢ËÍÏß³ÌÊýÁ¿
+//ï¿½ï¿½ï¿½ï¿½ï¿½ß³ï¿½ï¿½ï¿½ï¿½ï¿½
 const int tCount = 4;
-//¿Í»§¶ËÊý×é
+//ï¿½Í»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 EasyTcpClient* client[cCount];
-std::atomic_int sendCount = 0;
-std::atomic_int readyCount = 0;
+std::atomic_int sendCount;
+std::atomic_int readyCount;
 
 void recvThread(int begin, int end)
 {
@@ -45,7 +45,7 @@ void recvThread(int begin, int end)
 void sendThread(int id)
 {
 	printf("thread<%d>,start\n", id);
-	//4¸öÏß³Ì ID 1~4
+	//4ï¿½ï¿½ï¿½ß³ï¿½ ID 1~4
 	int c = cCount / tCount;
 	int begin = (id - 1)*c;
 	int end = id*c;
@@ -67,7 +67,7 @@ void sendThread(int id)
 
 	readyCount++;
 	while (readyCount < tCount)
-	{//µÈ´ýÆäËüÏß³Ì×¼±¸ºÃ·¢ËÍÊý¾Ý
+	{//ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß³ï¿½×¼ï¿½ï¿½ï¿½Ã·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		std::chrono::milliseconds t(10);
 		std::this_thread::sleep_for(t);
 	}
@@ -106,11 +106,11 @@ void sendThread(int id)
 
 int main()
 {
-	//Æô¶¯UIÏß³Ì
+	//ï¿½ï¿½ï¿½ï¿½UIï¿½ß³ï¿½
 	std::thread t1(cmdThread);
 	t1.detach();
 
-	//Æô¶¯·¢ËÍÏß³Ì
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß³ï¿½
 	for (int n = 0; n < tCount; n++)
 	{
 		std::thread t1(sendThread,n+1);
@@ -128,9 +128,13 @@ int main()
 			sendCount = 0;
 			tTime.update();
 		}
+#ifdef _WIN32_
 		Sleep(1);
+#else
+		sleep(1);
+#endif
 	}
 
-	printf("ÒÑÍË³ö¡£\n");
+	printf("ï¿½ï¿½ï¿½Ë³ï¿½ï¿½ï¿½\n");
 	return 0;
 }
