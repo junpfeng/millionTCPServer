@@ -38,6 +38,7 @@ public:
 			for (auto iter : _clients)
 			{
 				closesocket(iter.second->sockfd());
+				printf("断开与 socket=%d\n", iter.second->sockfd());
 				delete iter.second;
 			}
 			//关闭套节字closesocket
@@ -151,14 +152,12 @@ public:
 				if (_pNetEvent)  // 客户端离开网络事件
 					_pNetEvent->OnNetLeave(iter->second);
 				_clients_change = true;
+				printf("断开与 socket=%d\n", iter->second->sockfd());
 				delete iter->second;
-				// CloseSocket(iter->first);  // 断开与客户端的连接
+				CloseSocket(iter->first);  // 断开与客户端的连接
 				auto iterOld = iter;
-				// iter++;
 				_clients.erase(iterOld);
-				// continue;
 			}
-			// iter++;
 		}
 	}
 
@@ -175,6 +174,7 @@ public:
 						if (_pNetEvent)
 							_pNetEvent->OnNetLeave(iter->second);
 						_clients_change = true;
+						printf("断开与 socket=%d\n", iter->second->sockfd());
 						delete iter->second;
 						closesocket(iter->first);
 						_clients.erase(iter);

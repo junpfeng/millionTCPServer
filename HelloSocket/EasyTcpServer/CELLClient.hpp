@@ -4,7 +4,7 @@
 #include"CELL.hpp"
 
 //客户端心跳检测死亡计时时间，单位是毫秒
-#define CLIENT_HREAT_DEAD_TIME 5000
+#define CLIENT_HREAT_DEAD_TIME 50000
 //客户端数据类型
 class CellClient
 {

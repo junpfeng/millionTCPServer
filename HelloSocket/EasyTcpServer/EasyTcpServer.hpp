@@ -161,6 +161,7 @@ public:
 		for (int n = 0; n < nCellServer; n++)
 		{
 			auto ser = new CellServer(_sock);
+			// _cellServers 延长了 ser 的生命周期
 			_cellServers.push_back(ser);
 			//注册网络事件接受对象
 			ser->setEventObj(this);

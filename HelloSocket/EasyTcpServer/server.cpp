@@ -45,7 +45,7 @@ public:
 		case CMD_LOGIN:
 		{
 			// 每当服务器收到一次客户端的消息，就重置心跳计数
-			// pClient->resetDTHeart();
+			pClient->resetDTHeart();
 			//send recv 
 			netmsg_Login* login = (netmsg_Login*)header;
 			//printf("收到客户端<Socket=%d>请求：CMD_LOGIN,数据长度：%d,userName=%s PassWord=%s\n", cSock, login->dataLength, login->userName, login->PassWord);

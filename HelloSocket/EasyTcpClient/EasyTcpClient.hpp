@@ -167,11 +167,11 @@ public:
 		//memcpy(_szMsgBuf+_lastPos, _szRecv, nLen);
 		//消息缓冲区的数据尾部位置后移
 		_lastPos += nLen;
-		//判断消息缓冲区的数据长度大于消息头DataHeader长度
-		while (_lastPos >= sizeof(DataHeader))
+		//判断消息缓冲区的数据长度大于消息头netmsg_DataHeader长度
+		while (_lastPos >= sizeof(netmsg_DataHeader))
 		{
 			//这时就可以知道当前消息的长度
-			DataHeader* header = (DataHeader*)_szMsgBuf;
+			netmsg_DataHeader* header = (netmsg_DataHeader*)_szMsgBuf;
 			//判断消息缓冲区的数据长度大于消息长度
 			if (_lastPos >= header->dataLength)
 			{
@@ -193,26 +193,26 @@ public:
 	}
 
 	//响应网络消息
-	virtual void OnNetMsg(DataHeader* header)
+	virtual void OnNetMsg(netmsg_DataHeader* header)
 	{
 		switch (header->cmd)
 		{
 			case CMD_LOGIN_RESULT:
 			{
 			
-				LoginResult* login = (LoginResult*)header;
+				netmsg_Login* login = (netmsg_Login*)header;
 				//printf("<socket=%d>收到服务端消息：CMD_LOGIN_RESULT,数据长度：%d\n", _sock, login->dataLength);
 			}
 			break;
 			case CMD_LOGOUT_RESULT:
 			{
-				LogoutResult* logout = (LogoutResult*)header;
+				netmsg_LogoutR* logout = (netmsg_LogoutR*)header;
 				//printf("<socket=%d>收到服务端消息：CMD_LOGOUT_RESULT,数据长度：%d\n", _sock, logout->dataLength);
 			}
 			break;
 			case CMD_NEW_USER_JOIN:
 			{
-				NewUserJoin* userJoin = (NewUserJoin*)header;
+				netmsg_NewUserJoin* userJoin = (netmsg_NewUserJoin*)header;
 				//printf("<socket=%d>收到服务端消息：CMD_NEW_USER_JOIN,数据长度：%d\n", _sock, userJoin->dataLength);
 			}
 			break;
@@ -229,7 +229,7 @@ public:
 	}
 
 	//发送数据
-	int SendData(DataHeader* header,int nLen)
+	int SendData(netmsg_DataHeader* header,int nLen)
 	{
 		int ret = SOCKET_ERROR;
 		if (isRun() && header)

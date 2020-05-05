@@ -23,7 +23,7 @@ void cmdThread()
 }
 
 //客户端数量
-const int cCount = 8;
+const int cCount = 8000;
 //发送线程数量
 const int tCount = 4;
 //锟酵伙拷锟斤拷锟斤拷锟斤拷
@@ -59,7 +59,8 @@ void sendThread(int id)
 		// 局域网外网IP:223.106.134.35
 		// 云服务器IP47.96.105.148
 		// 本地IP 127.0.0.1
-		client[n]->Connect("47.96.105.148", 4567);
+// 		client[n]->Connect("47.96.105.148", 4567);
+		client[n]->Connect("127.0.0.1", 4567);
 	}
 
 	printf("thread<%d>,Connect<begin=%d, end=%d>\n", id, begin, end);
@@ -74,7 +75,7 @@ void sendThread(int id)
 	std::thread t1(recvThread, begin, end);
 	t1.detach();
 	//
-	Login login[10];
+	netmsg_Login login[10];
 	for (int n = 0; n < 10; n++)
 	{
 		strcpy(login[n].userName, "xinyeox");
