@@ -1,4 +1,4 @@
-#ifndef _CELLTimestamp_hpp_
+ï»¿#ifndef _CELLTimestamp_hpp_
 #define _CELLTimestamp_hpp_
 
 //#include <windows.h>
@@ -8,7 +8,7 @@ using namespace std::chrono;
 class CELLTime
 {
 public:
-	//»ñÈ¡µ±Ç°Ê±¼ä´Á (ºÁÃë)
+	//è·å–å½“å‰æ—¶é—´æˆ³ (æ¯«ç§’)
 	static time_t getNowInMilliSec()
 	{
 		return duration_cast<milliseconds>
@@ -34,21 +34,21 @@ public:
 		_begin = high_resolution_clock::now();
     }
     /**
-    *   »ñÈ¡µ±Ç°Ãë
+    *   è·å–å½“å‰ç§’
     */
     double getElapsedSecond()
     {
         return  getElapsedTimeInMicroSec() * 0.000001;
     }
     /**
-    *   »ñÈ¡ºÁÃë
+    *   è·å–æ¯«ç§’
     */
     double getElapsedTimeInMilliSec()
     {
         return this->getElapsedTimeInMicroSec() * 0.001;
     }
     /**
-    *   »ñÈ¡Î¢Ãî
+    *   è·å–å¾®å¦™
     */
     long long getElapsedTimeInMicroSec()
     {

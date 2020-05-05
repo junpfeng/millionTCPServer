@@ -1,4 +1,4 @@
-#include"EasyTcpClient.hpp"
+﻿#include"EasyTcpClient.hpp"
 #include"CELLTimestamp.hpp"
 #include<thread>
 #include<atomic>
@@ -13,20 +13,20 @@ void cmdThread()
 		if (0 == strcmp(cmdBuf, "exit"))
 		{
 			g_bRun = false;
-			printf("�˳�cmdThread�߳�\n");
+			printf("锟剿筹拷cmdThread锟竭筹拷\n");
 			break;
 		}
 		else {
-			printf("��֧�ֵ����\n");
+			printf("锟斤拷支锟街碉拷锟斤拷锟筋。\n");
 		}
 	}
 }
 
-//�ͻ�������
+//客户端数量
 const int cCount = 8;
-//�����߳�����
+//发送线程数量
 const int tCount = 4;
-//�ͻ�������
+//锟酵伙拷锟斤拷锟斤拷锟斤拷
 EasyTcpClient* client[cCount];
 std::atomic_int sendCount;
 std::atomic_int readyCount;
@@ -45,7 +45,7 @@ void recvThread(int begin, int end)
 void sendThread(int id)
 {
 	printf("thread<%d>,start\n", id);
-	//4���߳� ID 1~4
+	//4锟斤拷锟竭筹拷 ID 1~4
 	int c = cCount / tCount;
 	int begin = (id - 1)*c;
 	int end = id*c;
@@ -56,17 +56,17 @@ void sendThread(int id)
 	}
 	for (int n = begin; n < end; n++)
 	{
-		// ����������IP:223.106.134.35
-		// �Ʒ�����IP47.96.105.148
-		// ����IP 127.0.0.1
-		client[n]->Connect("127.0.0.1", 4567);
+		// 局域网外网IP:223.106.134.35
+		// 云服务器IP47.96.105.148
+		// 本地IP 127.0.0.1
+		client[n]->Connect("47.96.105.148", 4567);
 	}
 
 	printf("thread<%d>,Connect<begin=%d, end=%d>\n", id, begin, end);
 
 	readyCount++;
 	while (readyCount < tCount)
-	{//�ȴ������߳�׼���÷�������
+	{//锟饺达拷锟斤拷锟斤拷锟竭筹拷准锟斤拷锟矫凤拷锟斤拷锟斤拷锟斤拷
 		std::chrono::milliseconds t(10);
 		std::this_thread::sleep_for(t);
 	}
@@ -105,11 +105,11 @@ void sendThread(int id)
 
 int main()
 {
-	//����UI�߳�
+	//锟斤拷锟斤拷UI锟竭筹拷
 	std::thread t1(cmdThread);
 	t1.detach();
 
-	//���������߳�
+	//锟斤拷锟斤拷锟斤拷锟斤拷锟竭筹拷
 	for (int n = 0; n < tCount; n++)
 	{
 		std::thread t1(sendThread,n+1);
@@ -127,13 +127,13 @@ int main()
 			sendCount = 0;
 			tTime.update();
 		}
-#ifdef _WIN32_
+#ifdef _WIN32
 		Sleep(1);
 #else
 		sleep(1);
 #endif
 	}
 
-	printf("���˳���\n");
+	printf("锟斤拷锟剿筹拷锟斤拷\n");
 	return 0;
 }

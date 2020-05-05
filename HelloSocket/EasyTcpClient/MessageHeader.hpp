@@ -1,4 +1,4 @@
-#ifndef _MessageHeader_hpp_
+﻿#ifndef _MessageHeader_hpp_
 #define _MessageHeader_hpp_
 
 enum CMD

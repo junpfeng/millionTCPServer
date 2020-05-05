@@ -1,4 +1,4 @@
-#ifndef _EasyTcpServer_hpp_
+ï»¿#ifndef _EasyTcpServer_hpp_
 #define _EasyTcpServer_hpp_
 
 #include"CELL.hpp"
@@ -15,16 +15,16 @@ class EasyTcpServer : public INetEvent
 {
 private:
 	SOCKET _sock;
-	//ÏûÏ¢´¦Àí¶ÔÏó£¬ÄÚ²¿»á´´½¨Ïß³Ì
+	//æ¶ˆæ¯å¤„ç†å¯¹è±¡ï¼Œå†…éƒ¨ä¼šåˆ›å»ºçº¿ç¨‹
 	std::vector<CellServer*> _cellServers;
-	//Ã¿ÃëÏûÏ¢¼ÆÊ±
+	//æ¯ç§’æ¶ˆæ¯è®¡æ—¶
 	CELLTimestamp _tTime;
 protected:
-	//SOCKET recv¼ÆÊı
+	//SOCKET recvè®¡æ•°
 	std::atomic_int _recvCount;
-	//ÊÕµ½ÏûÏ¢¼ÆÊı
+	//æ”¶åˆ°æ¶ˆæ¯è®¡æ•°
 	std::atomic_int _msgCount;
-	//¿Í»§¶Ë¼ÆÊı
+	//å®¢æˆ·ç«¯è®¡æ•°
 	std::atomic_int _clientCount;
 public:
 	EasyTcpServer()
@@ -38,39 +38,39 @@ public:
 	{
 		Close();
 	}
-	//³õÊ¼»¯Socket
+	//åˆå§‹åŒ–Socket
 	SOCKET InitSocket()
 	{
 #ifdef _WIN32
-		//Æô¶¯Windows socket 2.x»·¾³
+		//å¯åŠ¨Windows socket 2.xç¯å¢ƒ
 		WORD ver = MAKEWORD(2, 2);
 		WSADATA dat;
 		WSAStartup(ver, &dat);
 #endif
 		if (INVALID_SOCKET != _sock)
 		{
-			printf("<socket=%d>¹Ø±Õ¾ÉÁ¬½Ó...\n", (int)_sock);
+			printf("<socket=%d>å…³é—­æ—§è¿æ¥...\n", (int)_sock);
 			Close();
 		}
 		_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (INVALID_SOCKET == _sock)
 		{
-			printf("´íÎó£¬½¨Á¢socketÊ§°Ü...\n");
+			printf("é”™è¯¯ï¼Œå»ºç«‹socketå¤±è´¥...\n");
 		}
 		else {
-			printf("½¨Á¢socket=<%d>³É¹¦...\n", (int)_sock);
+			printf("å»ºç«‹socket=<%d>æˆåŠŸ...\n", (int)_sock);
 		}
 		return _sock;
 	}
 
-	//°ó¶¨IPºÍ¶Ë¿ÚºÅ
+	//ç»‘å®šIPå’Œç«¯å£å·
 	int Bind(const char* ip, unsigned short port)
 	{
 		//if (INVALID_SOCKET == _sock)
 		//{
 		//	InitSocket();
 		//}
-		// 2 bind °ó¶¨ÓÃÓÚ½ÓÊÜ¿Í»§¶ËÁ¬½ÓµÄÍøÂç¶Ë¿Ú
+		// 2 bind ç»‘å®šç”¨äºæ¥å—å®¢æˆ·ç«¯è¿æ¥çš„ç½‘ç»œç«¯å£
 		sockaddr_in _sin = {};
 		_sin.sin_family = AF_INET;
 		_sin.sin_port = htons(port);//host to net unsigned short
@@ -93,33 +93,33 @@ public:
 		int ret = bind(_sock, (sockaddr*)&_sin, sizeof(_sin));
 		if (SOCKET_ERROR == ret)
 		{
-			printf("´íÎó,°ó¶¨ÍøÂç¶Ë¿Ú<%d>Ê§°Ü...\n", port);
+			printf("é”™è¯¯,ç»‘å®šç½‘ç»œç«¯å£<%d>å¤±è´¥...\n", port);
 		}
 		else {
-			printf("°ó¶¨ÍøÂç¶Ë¿Ú<%d>³É¹¦...\n", port);
+			printf("ç»‘å®šç½‘ç»œç«¯å£<%d>æˆåŠŸ...\n", port);
 		}
 		return ret;
 	}
 
-	//¼àÌı¶Ë¿ÚºÅ
+	//ç›‘å¬ç«¯å£å·
 	int Listen(int n)
 	{
-		// 3 listen ¼àÌıÍøÂç¶Ë¿Ú
+		// 3 listen ç›‘å¬ç½‘ç»œç«¯å£
 		int ret = listen(_sock, n);
 		if (SOCKET_ERROR == ret)
 		{
-			printf("socket=<%d>´íÎó,¼àÌıÍøÂç¶Ë¿ÚÊ§°Ü...\n",_sock);
+			printf("socket=<%d>é”™è¯¯,ç›‘å¬ç½‘ç»œç«¯å£å¤±è´¥...\n",_sock);
 		}
 		else {
-			printf("socket=<%d>¼àÌıÍøÂç¶Ë¿Ú³É¹¦...\n", _sock);
+			printf("socket=<%d>ç›‘å¬ç½‘ç»œç«¯å£æˆåŠŸ...\n", _sock);
 		}
 		return ret;
 	}
 
-	//½ÓÊÜ¿Í»§¶ËÁ¬½Ó
+	//æ¥å—å®¢æˆ·ç«¯è¿æ¥
 	SOCKET Accept()
 	{
-		// 4 accept µÈ´ı½ÓÊÜ¿Í»§¶ËÁ¬½Ó
+		// 4 accept ç­‰å¾…æ¥å—å®¢æˆ·ç«¯è¿æ¥
 		sockaddr_in clientAddr = {};
 		int nAddrLen = sizeof(sockaddr_in);
 		SOCKET cSock = INVALID_SOCKET;
@@ -130,20 +130,20 @@ public:
 #endif
 		if (INVALID_SOCKET == cSock)
 		{
-			printf("socket=<%d>´íÎó,½ÓÊÜµ½ÎŞĞ§¿Í»§¶ËSOCKET...\n", (int)_sock);
+			printf("socket=<%d>é”™è¯¯,æ¥å—åˆ°æ— æ•ˆå®¢æˆ·ç«¯SOCKET...\n", (int)_sock);
 		}
 		else
 		{
-			//½«ĞÂ¿Í»§¶Ë·ÖÅä¸ø¿Í»§ÊıÁ¿×îÉÙµÄcellServer
+			//å°†æ–°å®¢æˆ·ç«¯åˆ†é…ç»™å®¢æˆ·æ•°é‡æœ€å°‘çš„cellServer
 			addClientToCellServer(new CellClient(cSock));
-			//»ñÈ¡IPµØÖ· inet_ntoa(clientAddr.sin_addr)
+			//è·å–IPåœ°å€ inet_ntoa(clientAddr.sin_addr)
 		}
 		return cSock;
 	}
 	
 	void addClientToCellServer(CellClient* pClient)
 	{
-		//²éÕÒ¿Í»§ÊıÁ¿×îÉÙµÄCellServerÏûÏ¢´¦Àí¶ÔÏó
+		//æŸ¥æ‰¾å®¢æˆ·æ•°é‡æœ€å°‘çš„CellServeræ¶ˆæ¯å¤„ç†å¯¹è±¡
 		auto pMinServer = _cellServers[0];
 		for(auto pCellServer : _cellServers)
 		{
@@ -162,52 +162,52 @@ public:
 		{
 			auto ser = new CellServer(_sock);
 			_cellServers.push_back(ser);
-			//×¢²áÍøÂçÊÂ¼ş½ÓÊÜ¶ÔÏó
+			//æ³¨å†Œç½‘ç»œäº‹ä»¶æ¥å—å¯¹è±¡
 			ser->setEventObj(this);
-			//Æô¶¯ÏûÏ¢´¦ÀíÏß³Ì
+			//å¯åŠ¨æ¶ˆæ¯å¤„ç†çº¿ç¨‹
 			ser->Start();
 		}
 	}
-	//¹Ø±ÕSocket
+	//å…³é—­Socket
 	void Close()
 	{
 		if (_sock != INVALID_SOCKET)
 		{
 #ifdef _WIN32
-			//¹Ø±ÕÌ×½Ú×Öclosesocket
+			//å…³é—­å¥—èŠ‚å­—closesocket
 			closesocket(_sock);
 			//------------
-			//Çå³ıWindows socket»·¾³
+			//æ¸…é™¤Windows socketç¯å¢ƒ
 			WSACleanup();
 #else
-			//¹Ø±ÕÌ×½Ú×Öclosesocket
+			//å…³é—­å¥—èŠ‚å­—closesocket
 			close(_sock);
 #endif
 		}
 	}
-	//´¦ÀíÍøÂçÏûÏ¢
+	//å¤„ç†ç½‘ç»œæ¶ˆæ¯
 	bool OnRun()
 	{
 		if (isRun())
 		{
 			time4msg();
-			//²®¿ËÀûÌ×½Ó×Ö BSD socket
-			fd_set fdRead;//ÃèÊö·û£¨socket£© ¼¯ºÏ
-			//ÇåÀí¼¯ºÏ
+			//ä¼¯å…‹åˆ©å¥—æ¥å­— BSD socket
+			fd_set fdRead;//æè¿°ç¬¦ï¼ˆsocketï¼‰ é›†åˆ
+			//æ¸…ç†é›†åˆ
 			FD_ZERO(&fdRead);
-			//½«ÃèÊö·û£¨socket£©¼ÓÈë¼¯ºÏ
+			//å°†æè¿°ç¬¦ï¼ˆsocketï¼‰åŠ å…¥é›†åˆ
 			FD_SET(_sock, &fdRead);
-			///nfds ÊÇÒ»¸öÕûÊıÖµ ÊÇÖ¸fd_set¼¯ºÏÖĞËùÓĞÃèÊö·û(socket)µÄ·¶Î§£¬¶ø²»ÊÇÊıÁ¿
-			///¼ÈÊÇËùÓĞÎÄ¼şÃèÊö·û×î´óÖµ+1 ÔÚWindowsÖĞÕâ¸ö²ÎÊı¿ÉÒÔĞ´0
+			///nfds æ˜¯ä¸€ä¸ªæ•´æ•°å€¼ æ˜¯æŒ‡fd_seté›†åˆä¸­æ‰€æœ‰æè¿°ç¬¦(socket)çš„èŒƒå›´ï¼Œè€Œä¸æ˜¯æ•°é‡
+			///æ—¢æ˜¯æ‰€æœ‰æ–‡ä»¶æè¿°ç¬¦æœ€å¤§å€¼+1 åœ¨Windowsä¸­è¿™ä¸ªå‚æ•°å¯ä»¥å†™0
 			timeval t = { 0,10};
 			int ret = select(_sock + 1, &fdRead, 0, 0, &t); //
 			if (ret < 0)
 			{
-				printf("Accept SelectÈÎÎñ½áÊø¡£\n");
+				printf("Accept Selectä»»åŠ¡ç»“æŸã€‚\n");
 				Close();
 				return false;
 			}
-			//ÅĞ¶ÏÃèÊö·û£¨socket£©ÊÇ·ñÔÚ¼¯ºÏÖĞ
+			//åˆ¤æ–­æè¿°ç¬¦ï¼ˆsocketï¼‰æ˜¯å¦åœ¨é›†åˆä¸­
 			if (FD_ISSET(_sock, &fdRead))
 			{
 				FD_CLR(_sock, &fdRead);
@@ -218,13 +218,13 @@ public:
 		}
 		return false;
 	}
-	//ÊÇ·ñ¹¤×÷ÖĞ
+	//æ˜¯å¦å·¥ä½œä¸­
 	bool isRun()
 	{
 		return _sock != INVALID_SOCKET;
 	}
 
-	//¼ÆËã²¢Êä³öÃ¿ÃëÊÕµ½µÄÍøÂçÏûÏ¢
+	//è®¡ç®—å¹¶è¾“å‡ºæ¯ç§’æ”¶åˆ°çš„ç½‘ç»œæ¶ˆæ¯
 	void time4msg()
 	{
 		auto t1 = _tTime.getElapsedSecond();
@@ -236,21 +236,21 @@ public:
 			_tTime.update();
 		}
 	}
-	//Ö»»á±»Ò»¸öÏß³Ì´¥·¢ °²È«
+	//åªä¼šè¢«ä¸€ä¸ªçº¿ç¨‹è§¦å‘ å®‰å…¨
 	virtual void OnNetJoin(CellClient* pClient)
 	{
 		_clientCount++;
 		//printf("client<%d> join\n", pClient->sockfd());
 	}
-	//cellServer 4 ¶à¸öÏß³Ì´¥·¢ ²»°²È«
-	//Èç¹ûÖ»¿ªÆô1¸öcellServer¾ÍÊÇ°²È«µÄ
+	//cellServer 4 å¤šä¸ªçº¿ç¨‹è§¦å‘ ä¸å®‰å…¨
+	//å¦‚æœåªå¼€å¯1ä¸ªcellServerå°±æ˜¯å®‰å…¨çš„
 	virtual void OnNetLeave(CellClient* pClient)
 	{
 		_clientCount--;
 		//printf("client<%d> leave\n", pClient->sockfd());
 	}
-	//cellServer 4 ¶à¸öÏß³Ì´¥·¢ ²»°²È«
-	//Èç¹ûÖ»¿ªÆô1¸öcellServer¾ÍÊÇ°²È«µÄ
+	//cellServer 4 å¤šä¸ªçº¿ç¨‹è§¦å‘ ä¸å®‰å…¨
+	//å¦‚æœåªå¼€å¯1ä¸ªcellServerå°±æ˜¯å®‰å…¨çš„
 	virtual void OnNetMsg(CellServer* pCellServer, CellClient* pClient, netmsg_DataHeader* header)
 	{
 		_msgCount++;

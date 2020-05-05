@@ -1,4 +1,4 @@
-#ifndef _MessageHeader_hpp_
+ï»¿#ifndef _MessageHeader_hpp_
 #define _MessageHeader_hpp_
 
 enum CMD
@@ -8,8 +8,8 @@ enum CMD
 	CMD_LOGOUT,
 	CMD_LOGOUT_RESULT,
 	CMD_NEW_USER_JOIN,
-	CMD_C2S_HEART,  // ¿Í»§¶Ëµ½·şÎñÆ÷µÄĞÄÌø°ü
-	CMD_S2C_HEART,  // ·şÎñÆ÷µ½¿Í»§¶ËµÄĞÄÌø°ü
+	CMD_C2S_HEART,  // å®¢æˆ·ç«¯åˆ°æœåŠ¡å™¨çš„å¿ƒè·³åŒ…
+	CMD_S2C_HEART,  // æœåŠ¡å™¨åˆ°å®¢æˆ·ç«¯çš„å¿ƒè·³åŒ…
 	CMD_ERROR
 };
 
@@ -81,7 +81,7 @@ struct netmsg_NewUserJoin : public netmsg_DataHeader
 	int scok;
 };
 
-// ¿Í»§¶Ëµ½·şÎñÆ÷µÄĞÄÌø°ü
+// å®¢æˆ·ç«¯åˆ°æœåŠ¡å™¨çš„å¿ƒè·³åŒ…
 struct netmsg_c2s_Heart : public netmsg_DataHeader
 {
 	netmsg_c2s_Heart()
@@ -91,7 +91,7 @@ struct netmsg_c2s_Heart : public netmsg_DataHeader
 	}
 };
 
-// ·şÎñÆ÷µ½¿Í»§¶ËµÄĞÄÌø°ü
+// æœåŠ¡å™¨åˆ°å®¢æˆ·ç«¯çš„å¿ƒè·³åŒ…
 struct netmsg_s2c_Heart : public netmsg_DataHeader
 {
 	netmsg_s2c_Heart()

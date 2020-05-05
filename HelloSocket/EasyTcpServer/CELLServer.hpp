@@ -1,4 +1,4 @@
-#ifndef _CELL_SERVER_HPP_
+ï»¿#ifndef _CELL_SERVER_HPP_
 #define _CELL_SERVER_HPP_
 
 #include"CELL.hpp"
@@ -8,7 +8,7 @@
 #include<vector>
 #include<map>
 
-//ÍøÂçÏûÏ¢½ÓÊÕ´¦Àí·şÎñÀà
+//ç½‘ç»œæ¶ˆæ¯æ¥æ”¶å¤„ç†æœåŠ¡ç±»
 class CellServer
 {
 public:
@@ -29,7 +29,7 @@ public:
 		_pNetEvent = event;
 	}
 	
-	//¹Ø±ÕSocket
+	//å…³é—­Socket
 	void Close()
 	{
 		if (_sock != INVALID_SOCKET)
@@ -40,7 +40,7 @@ public:
 				closesocket(iter.second->sockfd());
 				delete iter.second;
 			}
-			//¹Ø±ÕÌ×½Ú×Öclosesocket
+			//å…³é—­å¥—èŠ‚å­—closesocket
 			closesocket(_sock);
 #else
 			for (auto iter : _clients)
@@ -48,23 +48,23 @@ public:
 				close(iter.second->sockfd());
 				delete iter.second;
 			}
-			//¹Ø±ÕÌ×½Ú×Öclosesocket
+			//å…³é—­å¥—èŠ‚å­—closesocket
 			close(_sock);
 #endif
 			_clients.clear();
 		}
 	}
 
-	//ÊÇ·ñ¹¤×÷ÖĞ
+	//æ˜¯å¦å·¥ä½œä¸­
 	bool isRun()
 	{
 		return _sock != INVALID_SOCKET;
 	}
 
-	//´¦ÀíÍøÂçÏûÏ¢
-	//±¸·İ¿Í»§socket fd_set
+	//å¤„ç†ç½‘ç»œæ¶ˆæ¯
+	//å¤‡ä»½å®¢æˆ·socket fd_set
 	fd_set _fdRead_bak;
-	//¿Í»§ÁĞ±íÊÇ·ñÓĞ±ä»¯
+	//å®¢æˆ·åˆ—è¡¨æ˜¯å¦æœ‰å˜åŒ–
 	bool _clients_change;
 	SOCKET _maxSock;
 	void OnRun()
@@ -73,7 +73,7 @@ public:
 		while (isRun())
 		{
 			if (!_clientsBuff.empty())
-			{//´Ó»º³å¶ÓÁĞÀïÈ¡³ö¿Í»§Êı¾İ
+			{//ä»ç¼“å†²é˜Ÿåˆ—é‡Œå–å‡ºå®¢æˆ·æ•°æ®
 				std::lock_guard<std::mutex> lock(_mutex);
 				for (auto pClient : _clientsBuff)
 				{
@@ -83,24 +83,24 @@ public:
 				_clients_change = true;
 			}
 
-			//Èç¹ûÃ»ÓĞĞèÒª´¦ÀíµÄ¿Í»§¶Ë£¬¾ÍÌø¹ı
+			//å¦‚æœæ²¡æœ‰éœ€è¦å¤„ç†çš„å®¢æˆ·ç«¯ï¼Œå°±è·³è¿‡
 			if (_clients.empty())
 			{
 				std::chrono::milliseconds t(1);
 				std::this_thread::sleep_for(t);
-				//¾ÉµÄÊ±¼ä´Á
+				//æ—§çš„æ—¶é—´æˆ³
 				_oldTime = CELLTime::getNowInMilliSec();
 				continue;
 			}
 
-			//²®¿ËÀûÌ×½Ó×Ö BSD socket
-			fd_set fdRead;//ÃèÊö·û£¨socket£© ¼¯ºÏ
-						  //ÇåÀí¼¯ºÏ
+			//ä¼¯å…‹åˆ©å¥—æ¥å­— BSD socket
+			fd_set fdRead;//æè¿°ç¬¦ï¼ˆsocketï¼‰ é›†åˆ
+						  //æ¸…ç†é›†åˆ
 			FD_ZERO(&fdRead);
 			if (_clients_change)
 			{
 				_clients_change = false;
-				//½«ÃèÊö·û£¨socket£©¼ÓÈë¼¯ºÏ
+				//å°†æè¿°ç¬¦ï¼ˆsocketï¼‰åŠ å…¥é›†åˆ
 				_maxSock = _clients.begin()->second->sockfd();
 				for (auto iter : _clients)
 				{
@@ -116,13 +116,13 @@ public:
 				memcpy(&fdRead, &_fdRead_bak, sizeof(fd_set));
 			}
 
-			///nfds ÊÇÒ»¸öÕûÊıÖµ ÊÇÖ¸fd_set¼¯ºÏÖĞËùÓĞÃèÊö·û(socket)µÄ·¶Î§£¬¶ø²»ÊÇÊıÁ¿
-			///¼ÈÊÇËùÓĞÎÄ¼şÃèÊö·û×î´óÖµ+1 ÔÚWindowsÖĞÕâ¸ö²ÎÊı¿ÉÒÔĞ´0
+			///nfds æ˜¯ä¸€ä¸ªæ•´æ•°å€¼ æ˜¯æŒ‡fd_seté›†åˆä¸­æ‰€æœ‰æè¿°ç¬¦(socket)çš„èŒƒå›´ï¼Œè€Œä¸æ˜¯æ•°é‡
+			///æ—¢æ˜¯æ‰€æœ‰æ–‡ä»¶æè¿°ç¬¦æœ€å¤§å€¼+1 åœ¨Windowsä¸­è¿™ä¸ªå‚æ•°å¯ä»¥å†™0
 			timeval t{ 0,1 };
 			int ret = select(_maxSock + 1, &fdRead, nullptr, nullptr, &t);
 			if (ret < 0)
 			{
-				printf("selectÈÎÎñ½áÊø¡£\n");
+				printf("selectä»»åŠ¡ç»“æŸã€‚\n");
 				Close();
 				return;
 			}
@@ -131,28 +131,28 @@ public:
 			//	continue;
 			//}
 			ReadData(fdRead);
-			CheckTime(); // ¼ì²éËùÓĞÓë·şÎñÆ÷ÏàÁ¬µÄ¿Í»§¶ËµÄĞÄÌø¼ÆÊıÊÇ·ñ³¬Ê±
+			CheckTime(); // æ£€æŸ¥æ‰€æœ‰ä¸æœåŠ¡å™¨ç›¸è¿çš„å®¢æˆ·ç«¯çš„å¿ƒè·³è®¡æ•°æ˜¯å¦è¶…æ—¶
 		}
 	}
-	//¾ÉµÄÊ±¼ä´Á
+	//æ—§çš„æ—¶é—´æˆ³
 	time_t _oldTime = CELLTime::getNowInMilliSec();
 	void CheckTime()
 	{
-		//µ±Ç°Ê±¼ä´Á
+		//å½“å‰æ—¶é—´æˆ³
 		auto nowTime = CELLTime::getNowInMilliSec();
 		auto dt = nowTime - _oldTime;
 		_oldTime = nowTime;
 
 		for (auto iter = _clients.begin(); iter != _clients.end(); ++iter)
 		{
-			// ¼ì²âËùÓĞ¿Í»§¶ËµÄĞÄÌø¼ÆÊı£¬Èç¹û³¬Ê±¾ÍÒÆ³ı
+			// æ£€æµ‹æ‰€æœ‰å®¢æˆ·ç«¯çš„å¿ƒè·³è®¡æ•°ï¼Œå¦‚æœè¶…æ—¶å°±ç§»é™¤
 			if (iter->second->checkHeart(dt))
 			{
-				if (_pNetEvent)  // ¿Í»§¶ËÀë¿ªÍøÂçÊÂ¼ş
+				if (_pNetEvent)  // å®¢æˆ·ç«¯ç¦»å¼€ç½‘ç»œäº‹ä»¶
 					_pNetEvent->OnNetLeave(iter->second);
 				_clients_change = true;
 				delete iter->second;
-				// CloseSocket(iter->first);  // ¶Ï¿ªÓë¿Í»§¶ËµÄÁ¬½Ó
+				// CloseSocket(iter->first);  // æ–­å¼€ä¸å®¢æˆ·ç«¯çš„è¿æ¥
 				auto iterOld = iter;
 				// iter++;
 				_clients.erase(iterOld);
@@ -208,50 +208,50 @@ public:
 #endif
 	}
 
-	//½ÓÊÕÊı¾İ ´¦ÀíÕ³°ü ²ğ·Ö°ü
+	//æ¥æ”¶æ•°æ® å¤„ç†ç²˜åŒ… æ‹†åˆ†åŒ…
 	int RecvData(CellClient* pClient)
 	{
-		//½ÓÊÕ¿Í»§¶ËÊı¾İ
+		//æ¥æ”¶å®¢æˆ·ç«¯æ•°æ®
 		char* szRecv = pClient->msgBuf() + pClient->getLastPos();
 		int nLen = (int)recv(pClient->sockfd(), szRecv, (RECV_BUFF_SZIE)-pClient->getLastPos(), 0);
 		_pNetEvent->OnNetRecv(pClient);
 		//printf("nLen=%d\n", nLen);
 		if (nLen <= 0)
 		{
-			//printf("¿Í»§¶Ë<Socket=%d>ÒÑÍË³ö£¬ÈÎÎñ½áÊø¡£\n", pClient->sockfd());
+			//printf("å®¢æˆ·ç«¯<Socket=%d>å·²é€€å‡ºï¼Œä»»åŠ¡ç»“æŸã€‚\n", pClient->sockfd());
 			return -1;
 		}
-		//½«ÊÕÈ¡µ½µÄÊı¾İ¿½±´µ½ÏûÏ¢»º³åÇø
+		//å°†æ”¶å–åˆ°çš„æ•°æ®æ‹·è´åˆ°æ¶ˆæ¯ç¼“å†²åŒº
 		//memcpy(pClient->msgBuf() + pClient->getLastPos(), _szRecv, nLen);
-		//ÏûÏ¢»º³åÇøµÄÊı¾İÎ²²¿Î»ÖÃºóÒÆ
+		//æ¶ˆæ¯ç¼“å†²åŒºçš„æ•°æ®å°¾éƒ¨ä½ç½®åç§»
 		pClient->setLastPos(pClient->getLastPos() + nLen);
 
-		//ÅĞ¶ÏÏûÏ¢»º³åÇøµÄÊı¾İ³¤¶È´óÓÚÏûÏ¢Í·netmsg_DataHeader³¤¶È
+		//åˆ¤æ–­æ¶ˆæ¯ç¼“å†²åŒºçš„æ•°æ®é•¿åº¦å¤§äºæ¶ˆæ¯å¤´netmsg_DataHeaderé•¿åº¦
 		while (pClient->getLastPos() >= sizeof(netmsg_DataHeader))
 		{
-			//ÕâÊ±¾Í¿ÉÒÔÖªµÀµ±Ç°ÏûÏ¢µÄ³¤¶È
+			//è¿™æ—¶å°±å¯ä»¥çŸ¥é“å½“å‰æ¶ˆæ¯çš„é•¿åº¦
 			netmsg_DataHeader* header = (netmsg_DataHeader*)pClient->msgBuf();
-			//ÅĞ¶ÏÏûÏ¢»º³åÇøµÄÊı¾İ³¤¶È´óÓÚÏûÏ¢³¤¶È
+			//åˆ¤æ–­æ¶ˆæ¯ç¼“å†²åŒºçš„æ•°æ®é•¿åº¦å¤§äºæ¶ˆæ¯é•¿åº¦
 			if (pClient->getLastPos() >= header->dataLength)
 			{
-				//ÏûÏ¢»º³åÇøÊ£ÓàÎ´´¦ÀíÊı¾İµÄ³¤¶È
+				//æ¶ˆæ¯ç¼“å†²åŒºå‰©ä½™æœªå¤„ç†æ•°æ®çš„é•¿åº¦
 				int nSize = pClient->getLastPos() - header->dataLength;
-				//´¦ÀíÍøÂçÏûÏ¢
+				//å¤„ç†ç½‘ç»œæ¶ˆæ¯
 				OnNetMsg(pClient, header);
-				//½«ÏûÏ¢»º³åÇøÊ£ÓàÎ´´¦ÀíÊı¾İÇ°ÒÆ
+				//å°†æ¶ˆæ¯ç¼“å†²åŒºå‰©ä½™æœªå¤„ç†æ•°æ®å‰ç§»
 				memcpy(pClient->msgBuf(), pClient->msgBuf() + header->dataLength, nSize);
-				//ÏûÏ¢»º³åÇøµÄÊı¾İÎ²²¿Î»ÖÃÇ°ÒÆ
+				//æ¶ˆæ¯ç¼“å†²åŒºçš„æ•°æ®å°¾éƒ¨ä½ç½®å‰ç§»
 				pClient->setLastPos(nSize);
 			}
 			else {
-				//ÏûÏ¢»º³åÇøÊ£ÓàÊı¾İ²»¹»Ò»ÌõÍêÕûÏûÏ¢
+				//æ¶ˆæ¯ç¼“å†²åŒºå‰©ä½™æ•°æ®ä¸å¤Ÿä¸€æ¡å®Œæ•´æ¶ˆæ¯
 				break;
 			}
 		}
 		return 0;
 	}
 
-	//ÏìÓ¦ÍøÂçÏûÏ¢
+	//å“åº”ç½‘ç»œæ¶ˆæ¯
 	virtual void OnNetMsg(CellClient* pClient, netmsg_DataHeader* header)
 	{
 		_pNetEvent->OnNetMsg(this, pClient, header);
@@ -285,14 +285,14 @@ public:
 	//}
 private:
 	SOCKET _sock;
-	//ÕıÊ½¿Í»§¶ÓÁĞ
+	//æ­£å¼å®¢æˆ·é˜Ÿåˆ—
 	std::map<SOCKET, CellClient*> _clients;
-	//»º³å¿Í»§¶ÓÁĞ
+	//ç¼“å†²å®¢æˆ·é˜Ÿåˆ—
 	std::vector<CellClient*> _clientsBuff;
-	//»º³å¶ÓÁĞµÄËø
+	//ç¼“å†²é˜Ÿåˆ—çš„é”
 	std::mutex _mutex;
 	std::thread _thread;
-	//ÍøÂçÊÂ¼ş¶ÔÏó
+	//ç½‘ç»œäº‹ä»¶å¯¹è±¡
 	INetEvent* _pNetEvent;
 	//
 	CellTaskServer _taskServer;

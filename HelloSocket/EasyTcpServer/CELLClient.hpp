@@ -1,11 +1,11 @@
-#ifndef _CellClient_hpp_
+ï»¿#ifndef _CellClient_hpp_
 #define _CellClient_hpp_
 
 #include"CELL.hpp"
 
-//¿Í»§¶ËĞÄÌø¼ì²âËÀÍö¼ÆÊ±Ê±¼ä£¬µ¥Î»ÊÇºÁÃë
+//å®¢æˆ·ç«¯å¿ƒè·³æ£€æµ‹æ­»äº¡è®¡æ—¶æ—¶é—´ï¼Œå•ä½æ˜¯æ¯«ç§’
 #define CLIENT_HREAT_DEAD_TIME 5000
-//¿Í»§¶ËÊı¾İÀàĞÍ
+//å®¢æˆ·ç«¯æ•°æ®ç±»å‹
 class CellClient
 {
 public:
@@ -40,41 +40,41 @@ public:
 		_lastPos = pos;
 	}
 
-	//·¢ËÍÊı¾İ
+	//å‘é€æ•°æ®
 	int SendData(netmsg_DataHeader* header)
 	{
 		int ret = SOCKET_ERROR;
-		//Òª·¢ËÍµÄÊı¾İ³¤¶È
+		//è¦å‘é€çš„æ•°æ®é•¿åº¦
 		int nSendLen = header->dataLength;
-		//Òª·¢ËÍµÄÊı¾İ
+		//è¦å‘é€çš„æ•°æ®
 		const char* pSendData = (const char*)header;
 
 		while (true)
 		{
 			if (_lastSendPos + nSendLen >= SEND_BUFF_SZIE)
 			{
-				//¼ÆËã¿É¿½±´µÄÊı¾İ³¤¶È
+				//è®¡ç®—å¯æ‹·è´çš„æ•°æ®é•¿åº¦
 				int nCopyLen = SEND_BUFF_SZIE - _lastSendPos;
-				//¿½±´Êı¾İ
+				//æ‹·è´æ•°æ®
 				memcpy(_szSendBuf + _lastSendPos, pSendData, nCopyLen);
-				//¼ÆËãÊ£ÓàÊı¾İÎ»ÖÃ
+				//è®¡ç®—å‰©ä½™æ•°æ®ä½ç½®
 				pSendData += nCopyLen;
-				//¼ÆËãÊ£ÓàÊı¾İ³¤¶È
+				//è®¡ç®—å‰©ä½™æ•°æ®é•¿åº¦
 				nSendLen -= nCopyLen;
-				//·¢ËÍÊı¾İ
+				//å‘é€æ•°æ®
 				ret = send(_sockfd, _szSendBuf, SEND_BUFF_SZIE, 0);
-				//Êı¾İÎ²²¿Î»ÖÃÇåÁã
+				//æ•°æ®å°¾éƒ¨ä½ç½®æ¸…é›¶
 				_lastSendPos = 0;
-				//·¢ËÍ´íÎó
+				//å‘é€é”™è¯¯
 				if (SOCKET_ERROR == ret)
 				{
 					return ret;
 				}
 			}
 			else {
-				//½«Òª·¢ËÍµÄÊı¾İ ¿½±´µ½·¢ËÍ»º³åÇøÎ²²¿
+				//å°†è¦å‘é€çš„æ•°æ® æ‹·è´åˆ°å‘é€ç¼“å†²åŒºå°¾éƒ¨
 				memcpy(_szSendBuf + _lastSendPos, pSendData, nSendLen);
-				//¼ÆËãÊı¾İÎ²²¿Î»ÖÃ
+				//è®¡ç®—æ•°æ®å°¾éƒ¨ä½ç½®
 				_lastSendPos += nSendLen;
 				break;
 			}
@@ -82,17 +82,17 @@ public:
 		return ret;
 	}
 
-	// ÖØÖÃĞÄÌø¼ÆÊı
+	// é‡ç½®å¿ƒè·³è®¡æ•°
 	void resetDTHeart()
 	{
 		_dtHeart = 0;
 	}
 
-	//¼ì²âĞÄÌøÊÇ·ñ³¬Ê±
+	//æ£€æµ‹å¿ƒè·³æ˜¯å¦è¶…æ—¶
 	bool checkHeart(time_t dt)
 	{
 		_dtHeart += dt;
-		// ³¬Ê±ËÀÍö
+		// è¶…æ—¶æ­»äº¡
 		if (_dtHeart >= CLIENT_HREAT_DEAD_TIME)
 		{
 			printf("checkHeart dead:s=%d,time=%d\n",_sockfd, _dtHeart);
@@ -104,16 +104,16 @@ public:
 private:
 	// socket fd_set  file desc set
 	SOCKET _sockfd;
-	//µÚ¶ş»º³åÇø ÏûÏ¢»º³åÇø
+	//ç¬¬äºŒç¼“å†²åŒº æ¶ˆæ¯ç¼“å†²åŒº
 	char _szMsgBuf[RECV_BUFF_SZIE];
-	//ÏûÏ¢»º³åÇøµÄÊı¾İÎ²²¿Î»ÖÃ
+	//æ¶ˆæ¯ç¼“å†²åŒºçš„æ•°æ®å°¾éƒ¨ä½ç½®
 	int _lastPos;
 
-	//µÚ¶ş»º³åÇø ·¢ËÍ»º³åÇø
+	//ç¬¬äºŒç¼“å†²åŒº å‘é€ç¼“å†²åŒº
 	char _szSendBuf[SEND_BUFF_SZIE];
-	//·¢ËÍ»º³åÇøµÄÊı¾İÎ²²¿Î»ÖÃ
+	//å‘é€ç¼“å†²åŒºçš„æ•°æ®å°¾éƒ¨ä½ç½®
 	int _lastSendPos;
-	//ĞÄÌøËÀÍö¼ÆÊ±
+	//å¿ƒè·³æ­»äº¡è®¡æ—¶
 	time_t _dtHeart;
 };
 
