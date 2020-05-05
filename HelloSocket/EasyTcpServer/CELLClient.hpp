@@ -3,6 +3,8 @@
 
 #include"CELL.hpp"
 
+//客户端心跳检测死亡计时时间，单位是毫秒
+#define CLIENT_HREAT_DEAD_TIME 5000
 //客户端数据类型
 class CellClient
 {
@@ -15,6 +17,8 @@ public:
 
 		memset(_szSendBuf, 0, SEND_BUFF_SZIE);
 		_lastSendPos = 0;
+
+		resetDTHeart();
 	}
 
 	SOCKET sockfd()
@@ -78,6 +82,25 @@ public:
 		return ret;
 	}
 
+	// 重置心跳计数
+	void resetDTHeart()
+	{
+		_dtHeart = 0;
+	}
+
+	//检测心跳是否超时
+	bool checkHeart(time_t dt)
+	{
+		_dtHeart += dt;
+		// 超时死亡
+		if (_dtHeart >= CLIENT_HREAT_DEAD_TIME)
+		{
+			printf("checkHeart dead:s=%d,time=%d\n",_sockfd, _dtHeart);
+			return true;
+		}
+		return false;
+	}
+
 private:
 	// socket fd_set  file desc set
 	SOCKET _sockfd;
@@ -90,6 +113,8 @@ private:
 	char _szSendBuf[SEND_BUFF_SZIE];
 	//发送缓冲区的数据尾部位置
 	int _lastSendPos;
+	//心跳死亡计时
+	time_t _dtHeart;
 };
 
 #endif // !_CellClient_hpp_

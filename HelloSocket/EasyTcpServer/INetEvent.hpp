@@ -3,7 +3,7 @@
 
 #include"CELL.hpp"
 #include"CELLClient.hpp"
-//ï¿½Ô¶ï¿½ï¿½ï¿½
+//×Ô¶¨Òå
 class CellServer;
 
 //ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½Ó¿ï¿½

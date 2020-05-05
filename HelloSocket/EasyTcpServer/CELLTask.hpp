@@ -5,7 +5,7 @@
 #include<mutex>
 #include<list>
 
-#include <functional>
+#include<functional>
 
 //执行任务的服务类型
 class CellTaskServer 
@@ -58,8 +58,6 @@ protected:
 			//处理任务
 			for (auto pTask : _tasks)
 			{
-				//pTask->doTask();
-				//delete pTask;
 				pTask();
 			}
 			//清空任务
