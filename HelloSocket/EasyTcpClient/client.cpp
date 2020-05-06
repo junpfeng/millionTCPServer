@@ -13,17 +13,17 @@ void cmdThread()
 		if (0 == strcmp(cmdBuf, "exit"))
 		{
 			g_bRun = false;
-			printf("锟剿筹拷cmdThread锟竭筹拷\n");
+			printf("cmdThread线程退出\n");
 			break;
 		}
 		else {
-			printf("锟斤拷支锟街碉拷锟斤拷锟筋。\n");
+			printf("指令不支持。\n");
 		}
 	}
 }
 
 //客户端数量
-const int cCount = 8000;
+const int cCount = 8;
 //发送线程数量
 const int tCount = 4;
 //锟酵伙拷锟斤拷锟斤拷锟斤拷

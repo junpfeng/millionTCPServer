@@ -153,14 +153,14 @@ public:
 			}
 		}
 		pMinServer->addClient(pClient);
-		OnNetJoin(pClient);
+		// OnNetJoin(pClient);
 	}
 
 	void Start(int nCellServer)
 	{
 		for (int n = 0; n < nCellServer; n++)
 		{
-			auto ser = new CellServer(_sock);
+			auto ser = new CellServer(n + 1);
 			// _cellServers 延长了 ser 的生命周期
 			_cellServers.push_back(ser);
 			//注册网络事件接受对象
@@ -172,19 +172,28 @@ public:
 	//关闭Socket
 	void Close()
 	{
+		printf("EasyTcpServer start Close\n");
 		if (_sock != INVALID_SOCKET)
 		{
+			// 清理 vector
+			for (auto  p : _cellServers) {
+				delete p;
+			}
+			// 清理其占用的内存，这是个好习惯，虽然析构也会去做这一步
+			std::vector<CellServer*>(_cellServers).swap(_cellServers);
 #ifdef _WIN32
-			//关闭套节字closesocket
+			//关闭套节字_sock
 			closesocket(_sock);
 			//------------
 			//清除Windows socket环境
 			WSACleanup();
 #else
-			//关闭套节字closesocket
+			//关闭套节字_sock
 			close(_sock);
 #endif
+			_sock = INVALID_SOCKET;
 		}
+		printf("EasyTcpServer end Close\n");
 	}
 	//处理网络消息
 	bool OnRun()

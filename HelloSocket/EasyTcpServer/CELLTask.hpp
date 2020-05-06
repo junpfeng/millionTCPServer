@@ -10,14 +10,19 @@
 //执行任务的服务类型
 class CellTaskServer 
 {
-	typedef std::function<void()> CellTask;
+public:
+	// 所属server的id
+	int serverId = -1;
 private:
+	typedef std::function<void()> CellTask;
 	//任务数据
 	std::list<CellTask> _tasks;
 	//任务数据缓冲区
 	std::list<CellTask> _tasksBuf;
 	//改变数据缓冲区时需要加锁
 	std::mutex _mutex;
+	// 线程是否允许的标志位
+	bool _isRun = false;
 public:
 	//添加任务
 	void addTask(CellTask task)
@@ -28,15 +33,22 @@ public:
 	//启动工作线程
 	void Start()
 	{
+		_isRun = true;
 		//线程
 		std::thread t(std::mem_fn(&CellTaskServer::OnRun),this);
 		t.detach();
+	}
+
+	void Close() {
+		printf("CellTaskServer %d Close\n", serverId);
+		// 通过控制这个标志位来控制线程的关闭
+		_isRun = false;
 	}
 protected:
 	//工作函数
 	void OnRun()
 	{
-		while (true)
+		while (_isRun)
 		{
 			//从缓冲区取出数据
 			if (!_tasksBuf.empty())
@@ -63,7 +75,7 @@ protected:
 			//清空任务
 			_tasks.clear();
 		}
-
+		printf("CellTaskServer%d.OnRun\n", serverId);
 	}
 };
 #endif // !_CELL_TASK_H_

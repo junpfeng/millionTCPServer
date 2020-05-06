@@ -4,13 +4,24 @@
 #include"CELL.hpp"
 
 //客户端心跳检测死亡计时时间，单位是毫秒
-#define CLIENT_HREAT_DEAD_TIME 50000
-//客户端数据类型
+#define CLIENT_HREAT_DEAD_TIME 60000  // 60s
+
+//发送数据定时时间，单位是毫秒，
+// 定时发送数据的机制类似于帧同步
+#define CLIENT_SEND_BUFF_TIME 200  // 200ms发一次
+
+//服务器存储的客户端对象
 class CellClient
 {
 public:
+	int id = -1;
+	int serverId = -1;
+public:
 	CellClient(SOCKET sockfd = INVALID_SOCKET)
 	{
+		static int n = 1;
+		id = n++;
+
 		_sockfd = sockfd;
 		memset(_szMsgBuf, 0, RECV_BUFF_SZIE);
 		_lastPos = 0;
@@ -19,8 +30,19 @@ public:
 		_lastSendPos = 0;
 
 		resetDTHeart();
+		resetDTSend();
 	}
-
+	~CellClient() {
+		printf("~CellClient id = %d, serverID = %d", id, serverId);
+		if (INVALID_SOCKET != _sockfd) {
+#ifdef _WIN32
+			closesocket(_sockfd);
+#else
+			close(_sockfd);
+#endif
+			_sockfd = SOCKET_ERROR;
+		}
+	}
 	SOCKET sockfd()
 	{
 		return _sockfd;
@@ -63,6 +85,8 @@ public:
 				nSendLen -= nCopyLen;
 				//发送数据
 				ret = send(_sockfd, _szSendBuf, SEND_BUFF_SZIE, 0);
+				resetDTSend();  // 发送定时清零
+
 				//数据尾部位置清零
 				_lastSendPos = 0;
 				//发送错误
@@ -88,6 +112,12 @@ public:
 		_dtHeart = 0;
 	}
 
+	// 重置心跳计数
+	void resetDTSend()
+	{
+		_dtSend = 0;
+	}
+
 	//检测心跳是否超时
 	bool checkHeart(time_t dt)
 	{
@@ -100,6 +130,36 @@ public:
 		}
 		return false;
 	}
+
+	// 立即发送数据，不管缓冲区是否装满
+	int SendDataReal() {
+		int ret = SOCKET_ERROR;
+		// 缓冲区有数据
+		if (_lastSendPos > 0 && SOCKET_ERROR != _sockfd ) {
+			ret = send(_sockfd, _szSendBuf, _lastSendPos, 0);
+			_lastSendPos = 0;
+			resetDTSend();  // 发送定时清零
+		}
+		return ret;
+	}
+
+	//定时发送消息
+	bool checkSend(time_t dt)
+	{
+		_dtSend += dt;
+		// 超时死亡
+		if (_dtSend >= CLIENT_SEND_BUFF_TIME)
+		{
+		// 	printf("checkSend:s=%d,time=%d\n", _sockfd, _dtSend);
+			// 时间到了，立即发送数据
+			SendDataReal();
+			// 重置定时初值
+			resetDTSend();
+			return true;
+		}
+		return false;
+	}
+
 
 private:
 	// socket fd_set  file desc set
@@ -115,6 +175,9 @@ private:
 	int _lastSendPos;
 	//心跳死亡计时
 	time_t _dtHeart;
+	// 定时发送：上次的时间
+	time_t _dtSend;
+
 };
 
 #endif // !_CellClient_hpp_

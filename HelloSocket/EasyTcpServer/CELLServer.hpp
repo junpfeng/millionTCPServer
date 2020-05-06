@@ -12,16 +12,17 @@
 class CellServer
 {
 public:
-	CellServer(SOCKET sock = INVALID_SOCKET)
+	// CellServer(SOCKET sock = INVALID_SOCKET)
+	CellServer(int id) :_id(id)
 	{
-		_sock = sock;
 		_pNetEvent = nullptr;
+		_taskServer.serverId = id;
 	}
 
 	~CellServer()
 	{
 		Close();
-		_sock = INVALID_SOCKET;
+		// _sock 由 EasyTcpServer 维护
 	}
 
 	void setEventObj(INetEvent* event)
@@ -32,46 +33,42 @@ public:
 	//关闭Socket
 	void Close()
 	{
-		if (_sock != INVALID_SOCKET)
+		printf("CellServer start Close %d\n", _id);
+		// 关闭任务线程
+		_taskServer.Close();
+		
+		// 清空_clients 数组
+		for (auto &iter : _clients)
 		{
-#ifdef _WIN32
-			for (auto iter : _clients)
-			{
-				closesocket(iter.second->sockfd());
-				printf("断开与 socket=%d\n", iter.second->sockfd());
-				delete iter.second;
-			}
-			//关闭套节字closesocket
-			closesocket(_sock);
-#else
-			for (auto iter : _clients)
-			{
-				close(iter.second->sockfd());
-				delete iter.second;
-			}
-			//关闭套节字closesocket
-			close(_sock);
-#endif
-			_clients.clear();
+			printf("断开与 socket=%d\n", iter.second->sockfd());
+			delete iter.second;
 		}
+		_clients.clear();  // map的clear会真正的删除内存
+		// std::map<SOCKET, CellClient*>().swap(_clients);
+
+		for (auto &iter : _clientsBuff) {
+			delete iter;
+		}
+		// vector的clear 不会真正删除内存
+		std::vector<CellClient*>(_clientsBuff).swap(_clientsBuff);
+		// _clientsBuff.clear();
+		// 一旦 _sock 被置为INVALID，该对象开启的线程就会结束循环，从而退出。
+
+		printf("CellServer end Close %d\n", _id);
 	}
 
-	//是否工作中
-	bool isRun()
-	{
-		return _sock != INVALID_SOCKET;
-	}
+	////是否工作中
+	//bool isRun()
+	//{
+	//	// 一旦 _sock == INVALID_SOCKET，该对象启动的线程就会退出。
+	//	// return _sock != INVALID_SOCKET;
+	//	return _isRun;
+	//}
 
-	//处理网络消息
-	//备份客户socket fd_set
-	fd_set _fdRead_bak;
-	//客户列表是否有变化
-	bool _clients_change;
-	SOCKET _maxSock;
+
 	void OnRun()
 	{
-		_clients_change = true;
-		while (isRun())
+		while (_isRun)
 		{
 			if (!_clientsBuff.empty())
 			{//从缓冲队列里取出客户数据
@@ -79,6 +76,10 @@ public:
 				for (auto pClient : _clientsBuff)
 				{
 					_clients[pClient->sockfd()] = pClient;
+					pClient->serverId = _id;
+					if (_pNetEvent)
+						_pNetEvent->OnNetJoin(pClient);
+					
 				}
 				_clientsBuff.clear();
 				_clients_change = true;
@@ -135,8 +136,7 @@ public:
 			CheckTime(); // 检查所有与服务器相连的客户端的心跳计数是否超时
 		}
 	}
-	//旧的时间戳
-	time_t _oldTime = CELLTime::getNowInMilliSec();
+	
 	void CheckTime()
 	{
 		//当前时间戳
@@ -144,7 +144,7 @@ public:
 		auto dt = nowTime - _oldTime;
 		_oldTime = nowTime;
 
-		for (auto iter = _clients.begin(); iter != _clients.end(); ++iter)
+		for (auto iter = _clients.begin(); iter != _clients.end(); )
 		{
 			// 检测所有客户端的心跳计数，如果超时就移除
 			if (iter->second->checkHeart(dt))
@@ -154,10 +154,15 @@ public:
 				_clients_change = true;
 				printf("断开与 socket=%d\n", iter->second->sockfd());
 				delete iter->second;
-				CloseSocket(iter->first);  // 断开与客户端的连接
+				// CloseSocket(iter->first);  // 断开与客户端的连接
 				auto iterOld = iter;
+				++iter;
 				_clients.erase(iterOld);
+				continue;
 			}
+			//  定时发送
+			iter->second->checkSend(dt);
+			++iter;
 		}
 	}
 
@@ -176,7 +181,7 @@ public:
 						_clients_change = true;
 						printf("断开与 socket=%d\n", iter->second->sockfd());
 						delete iter->second;
-						closesocket(iter->first);
+						// closesocket(iter->first);
 						_clients.erase(iter);
 					}
 				}
@@ -195,7 +200,7 @@ public:
 						if (_pNetEvent)
 							_pNetEvent->OnNetLeave(iter.second);
 						_clients_change = true;
-						close(iter->first);
+						// close(iter->first);
 						temp.push_back(iter.second);
 					}
 				}
@@ -267,8 +272,13 @@ public:
 
 	void Start()
 	{
-		_thread = std::thread(std::mem_fn(&CellServer::OnRun), this);
-		_taskServer.Start();
+		if (!_isRun) {
+			_isRun = true;
+			// 启动CellServer对象内的线程函数后，再次启动_taskServer对象内的线程函数
+			_thread = std::thread(std::mem_fn(&CellServer::OnRun), this);
+			_thread.detach();
+			_taskServer.Start();
+		}
 	}
 
 	size_t getClientCount()
@@ -284,7 +294,9 @@ public:
 	//	});
 	//}
 private:
-	SOCKET _sock;
+	// 服务器监听套接字，由EasyTcpServer对象传入
+	// 但是由于是值传递，实际上CellServer还是可以独立管理_sock
+	// SOCKET _sock;
 	//正式客户队列
 	std::map<SOCKET, CellClient*> _clients;
 	//缓冲客户队列
@@ -293,9 +305,23 @@ private:
 	std::mutex _mutex;
 	std::thread _thread;
 	//网络事件对象
-	INetEvent* _pNetEvent;
+	INetEvent* _pNetEvent = nullptr;
 	//
 	CellTaskServer _taskServer;
+
+	//处理网络消息
+	//备份客户socket fd_set
+	fd_set _fdRead_bak;
+	//客户列表是否有变化
+	bool _clients_change = true;
+	SOCKET _maxSock;
+	//旧的时间戳
+	time_t _oldTime = CELLTime::getNowInMilliSec();
+	// 当前对象ID
+	int _id = 0;
+	// 是否正在工作标志位
+	bool _isRun = false;
+
 };
 
 #endif // !_CELL_SERVER_HPP_

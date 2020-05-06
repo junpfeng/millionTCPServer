@@ -91,7 +91,7 @@ int main()
 	server.InitSocket();
 	server.Bind(nullptr, 4567);
 	server.Listen(5);
-	server.Start(4);
+	server.Start(4);  // 收发客户端的服务器对象线程
 
 	//启动UI线程
 	std::thread t1(cmdThread);
@@ -99,7 +99,7 @@ int main()
 
 	while (g_bRun)
 	{
-		server.OnRun();
+		server.OnRun();  // 监听端口的服务器对象
 		//printf("空闲时间处理其它业务..\n");
 	}
 	server.Close();
