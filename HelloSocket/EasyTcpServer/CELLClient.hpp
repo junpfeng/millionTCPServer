@@ -33,7 +33,7 @@ public:
 		resetDTSend();
 	}
 	~CellClient() {
-		printf("~CellClient id = %d, serverID = %d", id, serverId);
+		printf("~CellClient id = %d, serverID = %d\n", id, serverId);
 		if (INVALID_SOCKET != _sockfd) {
 #ifdef _WIN32
 			closesocket(_sockfd);

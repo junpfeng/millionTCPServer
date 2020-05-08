@@ -4,6 +4,7 @@
 #include"CELL.hpp"
 #include"INetEvent.hpp"
 #include"CELLClient.hpp"
+#include "CELLSemaphore.hpp" 
 
 #include<vector>
 #include<map>
@@ -33,30 +34,18 @@ public:
 	//关闭Socket
 	void Close()
 	{
-		printf("CellServer start Close %d\n", _id);
-		// 关闭任务线程
-		_taskServer.Close();
+		if (_isRun) {
+			printf("CellServer start Close %d\n", _id);
+			// 继续去关闭任务线程
+			_taskServer.Close();
+			// 控制线程函数结束循环
+			_isRun = false;
+			// 阻塞等待线程函数结束
+			_sem.wait();
+			printf("CellServer end Close %d\n", _id);
+		}
 		
-		// 清空_clients 数组
-		for (auto &iter : _clients)
-		{
-			printf("断开与 socket=%d\n", iter.second->sockfd());
-			delete iter.second;
-		}
-		_clients.clear();  // map的clear会真正的删除内存
-		// std::map<SOCKET, CellClient*>().swap(_clients);
-
-		for (auto &iter : _clientsBuff) {
-			delete iter;
-		}
-		// vector的clear 不会真正删除内存
-		std::vector<CellClient*>(_clientsBuff).swap(_clientsBuff);
-		// _clientsBuff.clear();
-		// 一旦 _sock 被置为INVALID，该对象开启的线程就会结束循环，从而退出。
-
-		printf("CellServer end Close %d\n", _id);
 	}
-
 	////是否工作中
 	//bool isRun()
 	//{
@@ -81,7 +70,8 @@ public:
 						_pNetEvent->OnNetJoin(pClient);
 					
 				}
-				_clientsBuff.clear();
+				// std::vector<CellClient*>().swap(_clientsBuff);
+				_clientsBuff.clear();  // 此处使用clear是为了避免之后再次给这个缓冲区添加元素时出现的开辟内存的消耗
 				_clients_change = true;
 			}
 
@@ -135,6 +125,9 @@ public:
 			ReadData(fdRead);
 			CheckTime(); // 检查所有与服务器相连的客户端的心跳计数是否超时
 		}
+		// 清空clients数组
+		CleanClients();
+		_sem.wakeup();
 	}
 	
 	void CheckTime()
@@ -294,6 +287,26 @@ public:
 	//	});
 	//}
 private:
+	void CleanClients() {
+		// 清空_clients 数组
+		for (auto iter : _clients)
+		{
+			printf("CleanClients 断开与 socket=%d\n", iter.second->sockfd());
+			delete iter.second;
+		}
+		_clients.clear();  // map的clear会真正的删除内存
+						   // std::map<SOCKET, CellClient*>().swap(_clients);
+
+		for (auto &iter : _clientsBuff) {
+			delete iter;
+		}
+		// vector的clear 不会真正删除内存
+		std::vector<CellClient*>(_clientsBuff).swap(_clientsBuff);
+		// _clientsBuff.clear();
+		// 一旦 _sock 被置为INVALID，该对象开启的线程就会结束循环，从而退出。
+	}
+
+private:
 	// 服务器监听套接字，由EasyTcpServer对象传入
 	// 但是由于是值传递，实际上CellServer还是可以独立管理_sock
 	// SOCKET _sock;
@@ -321,6 +334,8 @@ private:
 	int _id = 0;
 	// 是否正在工作标志位
 	bool _isRun = false;
+	// 信号量
+	CELLSemaphore _sem;
 
 };
 

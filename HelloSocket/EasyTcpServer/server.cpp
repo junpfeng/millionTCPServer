@@ -105,5 +105,6 @@ int main()
 	server.Close();
 	printf("已退出。\n");
 	getchar();
+	getchar();
 	return 0;
 }

@@ -7,6 +7,8 @@
 
 #include<functional>
 
+#include"CELLSemaphore.hpp"
+
 //执行任务的服务类型
 class CellTaskServer 
 {
@@ -23,6 +25,8 @@ private:
 	std::mutex _mutex;
 	// 线程是否允许的标志位
 	bool _isRun = false;
+	// 信号量对象
+	CELLSemaphore _sem;
 public:
 	//添加任务
 	void addTask(CellTask task)
@@ -40,9 +44,14 @@ public:
 	}
 
 	void Close() {
-		printf("CellTaskServer %d Close\n", serverId);
-		// 通过控制这个标志位来控制线程的关闭
-		_isRun = false;
+		if (_isRun) {
+			printf("CellTaskServer %d Close begin\n", serverId);
+			// 通过控制这个标志位来控制线程的关闭
+			_isRun = false;
+			// 阻塞等待线程函数结束
+			_sem.wait();
+			printf("CellTaskServer %d Close end\n", serverId);
+		}
 	}
 protected:
 	//工作函数
@@ -76,6 +85,8 @@ protected:
 			_tasks.clear();
 		}
 		printf("CellTaskServer%d.OnRun\n", serverId);
+		// 该线程函数结束循环，即可唤醒阻塞
+		_sem.wakeup();
 	}
 };
 #endif // !_CELL_TASK_H_
