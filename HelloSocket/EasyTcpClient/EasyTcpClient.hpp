@@ -158,7 +158,7 @@ public:
 		char* szRecv = _szMsgBuf + _lastPos;
 		int nLen = (int)recv(cSock, szRecv, (RECV_BUFF_SZIE) - _lastPos, 0);
 		//printf("nLen=%d\n", nLen);
-		if (nLen <= 0)
+		if (nLen < 0)  // nLen == 0 时，只表示没有收到数据
 		{
 			printf("<socket=%d>与服务器断开连接，任务结束。\n", cSock);
 			return -1;

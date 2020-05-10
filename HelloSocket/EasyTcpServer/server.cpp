@@ -51,7 +51,9 @@ public:
 			//printf("收到客户端<Socket=%d>请求：CMD_LOGIN,数据长度：%d,userName=%s PassWord=%s\n", cSock, login->dataLength, login->userName, login->PassWord);
 			//忽略判断用户密码是否正确的过程
 			netmsg_LoginR ret;
-			pClient->SendData(&ret);
+			if (SOCKET_ERROR == pClient->SendData(&ret)) {
+				printf("<Socket=%d> Send Full\n", pClient->sockfd());
+			}
 			//netmsg_LoginR* ret = new netmsg_LoginR();
 			//pCellServer->addSendTask(pClient, ret);
 		}//接收 消息---处理 发送   生产者 数据缓冲区  消费者 

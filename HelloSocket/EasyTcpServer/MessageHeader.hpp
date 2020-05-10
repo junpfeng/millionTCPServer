@@ -20,8 +20,8 @@ struct netmsg_DataHeader
 		dataLength = sizeof(netmsg_DataHeader);
 		cmd = CMD_ERROR;
 	}
-	short dataLength;
-	short cmd;
+	unsigned short dataLength;
+	unsigned short cmd;
 };
 
 //DataPackage

@@ -48,6 +48,13 @@ public:
 		WORD ver = MAKEWORD(2, 2);
 		WSADATA dat;
 		WSAStartup(ver, &dat);
+#else
+		/*if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+			return -1;*/
+		// 在linux内，客户端断开可能会导致服务器断开，
+		// 是由于SIGPIPE 这个信号触发的，下面将该信号忽略。
+		signal(SIGPIPE, SIG_IGN);
+				
 #endif
 		if (INVALID_SOCKET != _sock)
 		{
@@ -158,6 +165,7 @@ public:
 		// OnNetJoin(pClient);
 	}
 
+	// 服务器连接线程的启动的同时，启动消息处理线程
 	void Start(int nCellServer)
 	{
 		for (int n = 0; n < nCellServer; n++)
@@ -176,7 +184,8 @@ public:
 			OnRun(pThread);
 		});
 	}
-	//关闭Socket
+	
+	//关闭连接线程和处理线程的相关资源：_sock 和 一些申请的内存
 	void Close()
 	{
 		printf("EasyTcpServer start Close\n");
@@ -204,7 +213,8 @@ public:
 		printf("EasyTcpServer end Close\n");
 	}
 
-
+public:
+	/* ------------------下面5个API主要用于客户端连接的统计 --------------------*/
 	//计算并输出每秒收到的网络消息
 	void time4msg()
 	{
@@ -236,7 +246,7 @@ public:
 	{
 		_msgCount++;
 	}
-
+	// 统计接收的次数
 	virtual void OnNetRecv(CellClient* pClient)
 	{
 		_recvCount++;
@@ -244,7 +254,7 @@ public:
 	}
 
 private:
-	//处理网络消息
+	// 线程启动的入口函数
 	void OnRun(CELLThread * pThread)
 	{
 		while (pThread->isRun())

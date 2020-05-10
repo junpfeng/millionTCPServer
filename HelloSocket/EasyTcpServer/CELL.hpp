@@ -13,6 +13,7 @@
 	#include<unistd.h> //uni std
 	#include<arpa/inet.h>
 	#include<string.h>
+	#include<signal.h>
 
 	#define SOCKET int
 	#define INVALID_SOCKET  (SOCKET)(~0)

@@ -30,8 +30,8 @@ public:
 	{
 		_pNetEvent = event;
 	}
-	
-	//关闭Socket
+
+	// 当前对象结束时，相关资源关闭：线程和内存
 	void Close()
 	{
 		printf("CellServer start Close %d\n", _id);
@@ -41,7 +41,7 @@ public:
 		_thread.Close();
 		printf("CellServer end Close %d\n", _id);
 
-		
+
 	}
 	////是否工作中
 	//bool isRun()
@@ -51,7 +51,7 @@ public:
 	//	return _isRun;
 	//}
 
-
+	// 线程入口函数
 	void OnRun(CELLThread * pThread)
 	{
 		while (pThread->isRun())
@@ -65,7 +65,7 @@ public:
 					pClient->serverId = _id;
 					if (_pNetEvent)
 						_pNetEvent->OnNetJoin(pClient);
-					
+
 				}
 				// std::vector<CellClient*>().swap(_clientsBuff);
 				_clientsBuff.clear();  // 此处使用clear是为了避免之后再次给这个缓冲区添加元素时出现的开辟内存的消耗
@@ -85,9 +85,11 @@ public:
 			//伯克利套接字 BSD socket
 			fd_set fdRead;//描述符（socket） 集合
 						  //清理集合
-			FD_ZERO(&fdRead);
+			fd_set fdWrite; // 可写事件集合
+
 			if (_clients_change)
 			{
+				FD_ZERO(&fdRead);
 				_clients_change = false;
 				//将描述符（socket）加入集合
 				_maxSock = _clients.begin()->second->sockfd();
@@ -104,29 +106,32 @@ public:
 			else {
 				memcpy(&fdRead, &_fdRead_bak, sizeof(fd_set));
 			}
+			// 需要被写的套接字和被读的是同一批
+			memcpy(&fdWrite, &_fdRead_bak, sizeof(fd_set));
 
 			///nfds 是一个整数值 是指fd_set集合中所有描述符(socket)的范围，而不是数量
 			///既是所有文件描述符最大值+1 在Windows中这个参数可以写0
 			timeval t{ 0,1 };
 			int ret = select(_maxSock + 1, &fdRead, nullptr, nullptr, &t);
-			if (ret < 0)
+			if (ret < 0) // select 出错
 			{
 				printf("select任务结束。\n");
-				Close();
-				return;
+				pThread->Exit();
+				// Close();
+				break;
 			}
-			//else if (ret == 0)
-			//{
-			//	continue;
-			//}
+			// 更新读事件和写事件集合
 			ReadData(fdRead);
+			WriteData(fdWrite);
+			// printf("CELLServer%d.OnRun.select: fdRead=%d,fdWrite=%d\n", _id, fdRead.fd_count, fdWrite.fd_count);
+			// 心跳检测和定时发送
 			CheckTime(); // 检查所有与服务器相连的客户端的心跳计数是否超时
 		}
 		// 清空clients数组
-		CleanClients();
-		_sem.wakeup();
+		printf("CELLServer %d.OnRun exit\n", _id);
 	}
-	
+
+	// 心跳检测的同时，进行定时发送
 	void CheckTime()
 	{
 		//当前时间戳
@@ -156,6 +161,43 @@ public:
 		}
 	}
 
+	// 清空 pClient 数组
+	void OnClientLeave(CellClient * pClient) {
+		if (_pNetEvent) {
+			_pNetEvent->OnNetLeave(pClient);
+		}
+		_clients_change = true;
+		delete pClient;
+	}
+
+	// 更新写事件集合中的套接字
+	void WriteData(fd_set & fdWrite) {
+#ifdef _WIN32
+		for (int n = 0; n < fdWrite.fd_count; ++n) {
+			auto iter = _clients.find(fdWrite.fd_array[n]);
+			if (iter != _clients.end()) {
+				// 一旦发送出错，则退出
+				if (-1 == iter->second->SendDataReal()) {
+					OnClientLeave(iter->second);
+					_clients.erase(iter);
+				}
+			}
+		}
+#else
+		for (auto iter = _clients.begin(); iter != _clients.end(); ++iter) {
+			for (FD_ISSET(iter->second->sockfd(), &fdWrite)) {
+				if (-1 == iter->second->SendDataReal()) {
+					OnClientLeave(iter->second);
+					auto iterOld = iter;
+					_clients.erase(iterOld);
+					continue;
+				}
+			}
+		}
+
+#endif
+	}
+	// 更新读事件集合中的套接字
 	void ReadData(fd_set& fdRead)
 	{
 #ifdef _WIN32
@@ -252,6 +294,7 @@ public:
 		_pNetEvent->OnNetMsg(this, pClient, header);
 	}
 
+	// 将新连接的客户端加入客户端缓冲区
 	void addClient(CellClient* pClient)
 	{
 		std::lock_guard<std::mutex> lock(_mutex);
@@ -259,7 +302,8 @@ public:
 		_clientsBuff.push_back(pClient);
 		//_mutex.unlock();
 	}
-
+	
+	// 启动线程入口函数
 	void Start()
 	{
 		_taskServer.Start();
