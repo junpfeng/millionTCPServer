@@ -7,7 +7,7 @@
 
 #include<functional>
 
-#include"CELLSemaphore.hpp"
+#include"CellThread.hpp"
 
 //执行任务的服务类型
 class CellTaskServer 
@@ -23,10 +23,8 @@ private:
 	std::list<CellTask> _tasksBuf;
 	//改变数据缓冲区时需要加锁
 	std::mutex _mutex;
-	// 线程是否允许的标志位
-	bool _isRun = false;
-	// 信号量对象
-	CELLSemaphore _sem;
+	// 线程管理对象
+	CELLThread _thread;
 public:
 	//添加任务
 	void addTask(CellTask task)
@@ -37,27 +35,21 @@ public:
 	//启动工作线程
 	void Start()
 	{
-		_isRun = true;
-		//线程
-		std::thread t(std::mem_fn(&CellTaskServer::OnRun),this);
-		t.detach();
+		_thread.Start(nullptr, [this](CELLThread* pThread) {
+			OnRun(pThread);
+		});
 	}
 
 	void Close() {
-		if (_isRun) {
-			printf("CellTaskServer %d Close begin\n", serverId);
-			// 通过控制这个标志位来控制线程的关闭
-			_isRun = false;
-			// 阻塞等待线程函数结束
-			_sem.wait();
-			printf("CellTaskServer %d Close end\n", serverId);
-		}
+		printf("CELLTaskServer %d close\n", serverId);
+		_thread.Close();
 	}
+
 protected:
 	//工作函数
-	void OnRun()
+	void OnRun(CELLThread *pThread)
 	{
-		while (_isRun)
+		while (pThread->isRun())
 		{
 			//从缓冲区取出数据
 			if (!_tasksBuf.empty())
@@ -85,8 +77,6 @@ protected:
 			_tasks.clear();
 		}
 		printf("CellTaskServer%d.OnRun\n", serverId);
-		// 该线程函数结束循环，即可唤醒阻塞
-		_sem.wakeup();
 	}
 };
 #endif // !_CELL_TASK_H_

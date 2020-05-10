@@ -14,6 +14,8 @@
 class EasyTcpServer : public INetEvent
 {
 private:
+	// 线程管理对象
+	CELLThread _thread;
 	SOCKET _sock;
 	//消息处理对象，内部会创建线程
 	std::vector<CellServer*> _cellServers;
@@ -168,11 +170,17 @@ public:
 			//启动消息处理线程
 			ser->Start();
 		}
+		_thread.Start(
+			nullptr,
+			[this](CELLThread * pThread) {
+			OnRun(pThread);
+		});
 	}
 	//关闭Socket
 	void Close()
 	{
 		printf("EasyTcpServer start Close\n");
+		_thread.Close();
 		if (_sock != INVALID_SOCKET)
 		{
 			// 清理 vector
@@ -195,44 +203,7 @@ public:
 		}
 		printf("EasyTcpServer end Close\n");
 	}
-	//处理网络消息
-	bool OnRun()
-	{
-		if (isRun())
-		{
-			time4msg();
-			//伯克利套接字 BSD socket
-			fd_set fdRead;//描述符（socket） 集合
-			//清理集合
-			FD_ZERO(&fdRead);
-			//将描述符（socket）加入集合
-			FD_SET(_sock, &fdRead);
-			///nfds 是一个整数值 是指fd_set集合中所有描述符(socket)的范围，而不是数量
-			///既是所有文件描述符最大值+1 在Windows中这个参数可以写0
-			timeval t = { 0,10};
-			int ret = select(_sock + 1, &fdRead, 0, 0, &t); //
-			if (ret < 0)
-			{
-				printf("Accept Select任务结束。\n");
-				Close();
-				return false;
-			}
-			//判断描述符（socket）是否在集合中
-			if (FD_ISSET(_sock, &fdRead))
-			{
-				FD_CLR(_sock, &fdRead);
-				Accept();
-				return true;
-			}
-			return true;
-		}
-		return false;
-	}
-	//是否工作中
-	bool isRun()
-	{
-		return _sock != INVALID_SOCKET;
-	}
+
 
 	//计算并输出每秒收到的网络消息
 	void time4msg()
@@ -271,6 +242,39 @@ public:
 		_recvCount++;
 		//printf("client<%d> leave\n", pClient->sockfd());
 	}
+
+private:
+	//处理网络消息
+	void OnRun(CELLThread * pThread)
+	{
+		while (pThread->isRun())
+		{
+			time4msg();
+			//伯克利套接字 BSD socket
+			fd_set fdRead;//描述符（socket） 集合
+						  //清理集合
+			FD_ZERO(&fdRead);
+			//将描述符（socket）加入集合
+			FD_SET(_sock, &fdRead);
+			///nfds 是一个整数值 是指fd_set集合中所有描述符(socket)的范围，而不是数量
+			///既是所有文件描述符最大值+1 在Windows中这个参数可以写0
+			timeval t = { 0,10 };
+			int ret = select(_sock + 1, &fdRead, 0, 0, &t); //
+			if (ret < 0)
+			{
+				printf("EasyTcpServer.OnRun Select exit\n");
+				pThread->Exit();
+				break;
+			}
+			//判断描述符（socket）是否在集合中
+			if (FD_ISSET(_sock, &fdRead))
+			{
+				FD_CLR(_sock, &fdRead);
+				Accept();
+			}
+		}
+	}
+
 };
 
 #endif // !_EasyTcpServer_hpp_

@@ -1,24 +1,24 @@
 ﻿#include "EasyTcpServer.hpp"
 #include<thread>
 //
-bool g_bRun = true;
-void cmdThread()
-{//
-	while (true)
-	{
-		char cmdBuf[256] = {};
-		scanf("%s", cmdBuf);
-		if (0 == strcmp(cmdBuf, "exit"))
-		{
-			g_bRun = false;
-			printf("退出cmdThread线程\n");
-			break;
-		}
-		else {
-			printf("不支持的命令。\n");
-		}
-	}
-}
+//bool g_bRun = true;
+//void cmdThread()
+//{//
+//	while (true)
+//	{
+//		char cmdBuf[256] = {};
+//		scanf("%s", cmdBuf);
+//		if (0 == strcmp(cmdBuf, "exit"))
+//		{
+//			g_bRun = false;
+//			printf("退出cmdThread线程\n");
+//			break;
+//		}
+//		else {
+//			printf("不支持的命令。\n");
+//		}
+//	}
+//}
 
 class MyServer : public EasyTcpServer
 {
@@ -93,16 +93,26 @@ int main()
 	server.Listen(5);
 	server.Start(4);  // 收发客户端的服务器对象线程
 
-	//启动UI线程
-	std::thread t1(cmdThread);
-	t1.detach();
+	////启动UI线程
+	//std::thread t1(cmdThread);
+	//t1.detach();
 
-	while (g_bRun)
+	while (true)
 	{
-		server.OnRun();  // 监听端口的服务器对象
-		//printf("空闲时间处理其它业务..\n");
+		char cmdBuf[256] = {};
+		scanf("%s", cmdBuf);
+		if (0 == strcmp(cmdBuf, "exit"))
+		{
+			server.Close();
+			printf("退出cmdThread线程\n");
+			break;
+		}
+		else {
+			printf("不支持的命令。\n");
+		}
 	}
-	server.Close();
+
+	// server.Close();
 	printf("已退出。\n");
 	getchar();
 	getchar();

@@ -131,6 +131,11 @@ public:
 		return false;
 	}
 
+	void SendDataReal(netmsg_DataHeader * header) {
+		SendData(header);
+		SendDataReal();
+	}
+
 	// 立即发送数据，不管缓冲区是否装满
 	int SendDataReal() {
 		int ret = SOCKET_ERROR;

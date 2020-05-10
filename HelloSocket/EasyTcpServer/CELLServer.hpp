@@ -34,16 +34,13 @@ public:
 	//关闭Socket
 	void Close()
 	{
-		if (_isRun) {
-			printf("CellServer start Close %d\n", _id);
-			// 继续去关闭任务线程
-			_taskServer.Close();
-			// 控制线程函数结束循环
-			_isRun = false;
-			// 阻塞等待线程函数结束
-			_sem.wait();
-			printf("CellServer end Close %d\n", _id);
-		}
+		printf("CellServer start Close %d\n", _id);
+		// 继续去关闭任务线程
+		_taskServer.Close();
+		// 控制线程函数结束循环
+		_thread.Close();
+		printf("CellServer end Close %d\n", _id);
+
 		
 	}
 	////是否工作中
@@ -55,9 +52,9 @@ public:
 	//}
 
 
-	void OnRun()
+	void OnRun(CELLThread * pThread)
 	{
-		while (_isRun)
+		while (pThread->isRun())
 		{
 			if (!_clientsBuff.empty())
 			{//从缓冲队列里取出客户数据
@@ -265,13 +262,18 @@ public:
 
 	void Start()
 	{
-		if (!_isRun) {
-			_isRun = true;
-			// 启动CellServer对象内的线程函数后，再次启动_taskServer对象内的线程函数
-			_thread = std::thread(std::mem_fn(&CellServer::OnRun), this);
-			_thread.detach();
-			_taskServer.Start();
-		}
+		_taskServer.Start();
+		_thread.Start(
+			// onCreate
+			nullptr,
+			// onRun
+			[this](CELLThread * pThread) {
+			OnRun(pThread);
+		},
+			//onDestory
+			[this](CELLThread* pThread) {
+			CleanClients();
+		});
 	}
 
 	size_t getClientCount()
@@ -316,7 +318,7 @@ private:
 	std::vector<CellClient*> _clientsBuff;
 	//缓冲队列的锁
 	std::mutex _mutex;
-	std::thread _thread;
+	CELLThread _thread;
 	//网络事件对象
 	INetEvent* _pNetEvent = nullptr;
 	//
@@ -332,8 +334,6 @@ private:
 	time_t _oldTime = CELLTime::getNowInMilliSec();
 	// 当前对象ID
 	int _id = 0;
-	// 是否正在工作标志位
-	bool _isRun = false;
 	// 信号量
 	CELLSemaphore _sem;
 
