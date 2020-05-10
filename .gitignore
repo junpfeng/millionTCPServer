@@ -8,3 +8,4 @@ HelloMemory
 # HelloEpoll
 *.sln
 *.out
+*.gch

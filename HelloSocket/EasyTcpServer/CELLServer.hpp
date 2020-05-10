@@ -184,15 +184,21 @@ public:
 			}
 		}
 #else
-		for (auto iter = _clients.begin(); iter != _clients.end(); ++iter) {
+		// 之所以不讲++iter放在for循环里，是因为循环体内会产生iter失效的清空
+		for (auto iter = _clients.begin(); iter != _clients.end(); ) {
 			for (FD_ISSET(iter->second->sockfd(), &fdWrite)) {
 				if (-1 == iter->second->SendDataReal()) {
 					OnClientLeave(iter->second);
 					auto iterOld = iter;
+					++iter;
+					// erase 操作会使得 iterOld 失效， 
+					// 因此再erase之前，将iter++,
+					// 由于map的iter之间无线性关系，因此可以防止其失效。
 					_clients.erase(iterOld);
 					continue;
 				}
 			}
+			++iter;
 		}
 
 #endif
@@ -222,25 +228,20 @@ public:
 				}
 			}
 #else
-			std::vector<CellClient*> temp;
-			for (auto iter : _clients)
+		for (auto iter = _clients.begin(); iter != _clients.end(); )
+		{
+			if (FD_ISSET(iter->second->sockfd(), &fdRead))
 			{
-				if (FD_ISSET(iter.second->sockfd(), &fdRead))
+				if (-1 == RecvData(iter->second))
 				{
-					if (-1 == RecvData(iter.second))
-					{
-						if (_pNetEvent)
-							_pNetEvent->OnNetLeave(iter.second);
-						_clients_change = true;
-						// close(iter->first);
-						temp.push_back(iter.second);
-					}
+					OnClientLeave(iter->second);
+					auto iterOld = iter;
+					iter++;
+					_clients.erase(iterOld);
+					continue;
 				}
 			}
-			for (auto pClient : temp)
-			{
-				_clients.erase(pClient->sockfd());
-				delete pClient;
+			iter++;
 			}
 #endif
 	}

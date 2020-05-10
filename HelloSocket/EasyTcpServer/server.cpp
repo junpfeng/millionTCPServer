@@ -52,7 +52,7 @@ public:
 			//忽略判断用户密码是否正确的过程
 			netmsg_LoginR ret;
 			if (SOCKET_ERROR == pClient->SendData(&ret)) {
-				printf("<Socket=%d> Send Full\n", pClient->sockfd());
+				;// printf("<Socket=%d> Send Full\n", pClient->sockfd());
 			}
 			//netmsg_LoginR* ret = new netmsg_LoginR();
 			//pCellServer->addSendTask(pClient, ret);
