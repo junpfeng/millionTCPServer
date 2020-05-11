@@ -30,14 +30,16 @@
 #ifndef RECV_BUFF_SZIE
 	#define RECV_BUFF_SZIE 8192
 	#define SEND_BUFF_SZIE 10240
+	#define SEND_BUFF_SIZE SEND_BUFF_SZIE
+	#define RECV_BUFF_SIZE RECV_BUFF_SZIE
 #endif // !RECV_BUFF_SZIE
 
-int CloseSocket(SOCKET sock) {
-#ifdef _WIN32
-	return closesocket(sock);
-#else
-	return close(sock);
-#endif
-}
+//inline int CloseSocket(SOCKET sock) {
+//#ifdef _WIN32
+//	return closesocket(sock);
+//#else
+//	return close(sock);
+//#endif
+//}
 
 #endif // !_CELL_HPP_

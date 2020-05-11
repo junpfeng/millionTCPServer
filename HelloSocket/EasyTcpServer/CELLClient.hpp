@@ -2,6 +2,7 @@
 #define _CellClient_hpp_
 
 #include"CELL.hpp"
+#include"CELLBuffer.hpp"
 
 //客户端心跳检测死亡计时时间，单位是毫秒
 #define CLIENT_HREAT_DEAD_TIME 60000  // 60s
@@ -17,17 +18,14 @@ public:
 	int id = -1;
 	int serverId = -1;
 public:
-	CellClient(SOCKET sockfd = INVALID_SOCKET)
+	CellClient(SOCKET sockfd = INVALID_SOCKET):
+		_sendBuff(SEND_BUFF_SIZE),
+		_recvBuff(RECV_BUFF_SIZE)
 	{
 		static int n = 1;
 		id = n++;
 
 		_sockfd = sockfd;
-		memset(_szMsgBuf, 0, RECV_BUFF_SZIE);
-		_lastPos = 0;
-
-		memset(_szSendBuf, 0, SEND_BUFF_SZIE);
-		_lastSendPos = 0;
 
 		resetDTHeart();
 		resetDTSend();
@@ -48,45 +46,36 @@ public:
 		return _sockfd;
 	}
 
-	char* msgBuf()
-	{
-		return _szMsgBuf;
+	// 从套接字中读取数据，存入缓冲区
+	int RecvData() {
+		return _recvBuff.read4socket(_sockfd);
 	}
 
-	int getLastPos()
-	{
-		return _lastPos;
+	// 判断缓冲区中是否有数据
+	bool hasMsg() {
+		return _recvBuff.hasMsg();
 	}
-	void setLastPos(int pos)
-	{
-		_lastPos = pos;
+
+	// 返回缓冲区首地址（强转为netmsg_DataHeader)
+	netmsg_DataHeader* front_msg() {
+		return (netmsg_DataHeader*)_recvBuff.data();
+	}
+
+	// 将缓冲区的首个头数据弹出（丢弃）
+	void pop_front_msg() {
+		if (hasMsg()) {
+			_recvBuff.pop(front_msg()->dataLength);
+		}
 	}
 
 	//发送数据
 	int SendData(netmsg_DataHeader* header)
 	{
-		int ret = SOCKET_ERROR;
-		//要发送的数据长度
-		int nSendLen = header->dataLength;
-		//要发送的数据
-		const char* pSendData = (const char*)header;
-
-		if (_lastSendPos + nSendLen <= SEND_BUFF_SZIE)
-		{
-			//拷贝数据
-			memcpy(_szSendBuf + _lastSendPos, pSendData, nSendLen);
-			//计算剩余数据位置
-			_lastSendPos += nSendLen;
-			if (_lastSendPos == SEND_BUFF_SZIE) {
-				_sendBuffFullCount++;
-			}
-			return nSendLen;
+		// 将一个头包数据加入缓冲区
+		if (_sendBuff.push((const char*)header, header->dataLength)) {
+			return header->dataLength;
 		}
-		else {
-			// 表示缓冲区存满一次
-			_sendBuffFullCount++;
-		}
-		return ret;
+		return SOCKET_ERROR;
 	}
 
 	// 重置心跳计数
@@ -121,15 +110,9 @@ public:
 
 	// 立即发送数据，不管缓冲区是否装满
 	int SendDataReal() {
-		int ret = 0;
-		// 缓冲区有数据
-		if (_lastSendPos > 0 && SOCKET_ERROR != _sockfd ) {
-			ret = send(_sockfd, _szSendBuf, _lastSendPos, 0);
-			_lastSendPos = 0;
-			_sendBuffFullCount = 0;
-			resetDTSend();  // 发送定时清零
-		}
-		return ret;
+		// 重载定时发送事件
+		resetDTSend();
+		return _sendBuff.write2socket(_sockfd);
 	}
 
 	//定时发送消息
@@ -153,15 +136,10 @@ public:
 private:
 	// socket fd_set  file desc set
 	SOCKET _sockfd;
-	//第二缓冲区 消息缓冲区
-	char _szMsgBuf[RECV_BUFF_SZIE];
-	//消息缓冲区的数据尾部位置
-	int _lastPos;
+	// 收发缓冲区对象
+	CELLBuffer _recvBuff;
+	CELLBuffer _sendBuff;
 
-	//第二缓冲区 发送缓冲区
-	char _szSendBuf[SEND_BUFF_SZIE];
-	//发送缓冲区的数据尾部位置
-	int _lastSendPos;
 	//心跳死亡计时
 	time_t _dtHeart;
 	// 定时发送：上次的时间
