@@ -9,3 +9,4 @@ HelloMemory
 *.sln
 *.out
 *.gch
+*.tmp
