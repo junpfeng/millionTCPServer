@@ -1,5 +1,6 @@
 ﻿#include "EasyTcpServer.hpp"
 #include<thread>
+#include "CELL.hpp"
 //
 //bool g_bRun = true;
 //void cmdThread()
@@ -11,11 +12,11 @@
 //		if (0 == strcmp(cmdBuf, "exit"))
 //		{
 //			g_bRun = false;
-//			printf("退出cmdThread线程\n");
+//			CELLLog::Info("退出cmdThread线程\n");
 //			break;
 //		}
 //		else {
-//			printf("不支持的命令。\n");
+//			CELLLog::Info("不支持的命令。\n");
 //		}
 //	}
 //}
@@ -48,11 +49,12 @@ public:
 			pClient->resetDTHeart();
 			//send recv 
 			netmsg_Login* login = (netmsg_Login*)header;
-			//printf("收到客户端<Socket=%d>请求：CMD_LOGIN,数据长度：%d,userName=%s PassWord=%s\n", cSock, login->dataLength, login->userName, login->PassWord);
+			//CELLLog::Info("收到客户端<Socket=%d>请求：CMD_LOGIN,数据长度：%d,userName=%s PassWord=%s\n", cSock, login->dataLength, login->userName, login->PassWord);
 			//忽略判断用户密码是否正确的过程
 			netmsg_LoginR ret;
 			if (SOCKET_ERROR == pClient->SendData(&ret)) {
-				;// printf("<Socket=%d> Send Full\n", pClient->sockfd());
+				CELLLog::Info("SendFull");
+				// CELLLog::Info("<Socket=%d> Send Full\n", pClient->sockfd());
 			}
 			//netmsg_LoginR* ret = new netmsg_LoginR();
 			//pCellServer->addSendTask(pClient, ret);
@@ -61,7 +63,7 @@ public:
 		case CMD_LOGOUT:
 		{
 			netmsg_Logout* logout = (netmsg_Logout*)header;
-			//printf("收到客户端<Socket=%d>请求：CMD_LOGOUT,数据长度：%d,userName=%s \n", cSock, logout->dataLength, logout->userName);
+			//CELLLog::Info("收到客户端<Socket=%d>请求：CMD_LOGOUT,数据长度：%d,userName=%s \n", cSock, logout->dataLength, logout->userName);
 			//忽略判断用户密码是否正确的过程
 			//netmsg_LogoutR ret;
 			//SendData(cSock, &ret);
@@ -75,7 +77,7 @@ public:
 		}
 		default:
 		{
-			printf("<socket=%d>收到未定义消息,数据长度：%d\n", pClient->sockfd(), header->dataLength);
+			CELLLog::Info("<socket=%d>收到未定义消息,数据长度：%d\n", pClient->sockfd(), header->dataLength);
 			//netmsg_DataHeader ret;
 			//SendData(cSock, &ret);
 		}
@@ -88,7 +90,7 @@ private:
 
 int main()
 {
-
+	CELLLog::Instance().setLogPath("serverLog.txt", "w");
 	MyServer server;
 	server.InitSocket();
 	server.Bind(nullptr, 4567);
@@ -106,16 +108,16 @@ int main()
 		if (0 == strcmp(cmdBuf, "exit"))
 		{
 			server.Close();
-			printf("退出cmdThread线程\n");
+			CELLLog::Info("退出cmdThread线程\n");
 			break;
 		}
 		else {
-			printf("不支持的命令。\n");
+			CELLLog::Info("不支持的命令。\n");
 		}
 	}
 
 	// server.Close();
-	printf("已退出。\n");
+	CELLLog::Info("已退出。\n");
 	getchar();
 	getchar();
 	return 0;

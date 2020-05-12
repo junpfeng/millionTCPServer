@@ -31,7 +31,7 @@ public:
 		resetDTSend();
 	}
 	~CellClient() {
-		printf("~CellClient id = %d, serverID = %d\n", id, serverId);
+		CELLLog::Info("~CellClient id = %d, serverID = %d\n", id, serverId);
 		if (INVALID_SOCKET != _sockfd) {
 #ifdef _WIN32
 			closesocket(_sockfd);
@@ -97,7 +97,7 @@ public:
 		// 超时死亡
 		if (_dtHeart >= CLIENT_HREAT_DEAD_TIME)
 		{
-			printf("checkHeart dead:s=%d,time=%d\n",_sockfd, _dtHeart);
+			CELLLog::Info("checkHeart dead:s=%d,time=%d\n",_sockfd, _dtHeart);
 			return true;
 		}
 		return false;
@@ -122,7 +122,7 @@ public:
 		// 超时死亡
 		if (_dtSend >= CLIENT_SEND_BUFF_TIME)
 		{
-		// 	printf("checkSend:s=%d,time=%d\n", _sockfd, _dtSend);
+		// 	CELLLog::Info("checkSend:s=%d,time=%d\n", _sockfd, _dtSend);
 			// 时间到了，立即发送数据
 			SendDataReal();
 			// 重置定时初值

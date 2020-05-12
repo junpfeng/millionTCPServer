@@ -9,7 +9,7 @@
 
 #include"CellThread.hpp"
 
-//执行任务的服务类型
+//执行任务的服务器
 class CellTaskServer 
 {
 public:
@@ -41,7 +41,7 @@ public:
 	}
 
 	void Close() {
-		printf("CELLTaskServer %d close\n", serverId);
+		// CELLLog::Info("CELLTaskServer %d close\n", serverId);
 		_thread.Close();
 	}
 
@@ -61,7 +61,7 @@ protected:
 				}
 				_tasksBuf.clear();
 			}
-			//如果没有任务
+			//如果没有任务，就等一会
 			if (_tasks.empty())
 			{
 				std::chrono::milliseconds t(1);
@@ -75,8 +75,16 @@ protected:
 			}
 			//清空任务
 			_tasks.clear();
+
 		}
-		printf("CellTaskServer%d.OnRun\n", serverId);
+		// 防止线程结束时，缓冲区还有任务，处理缓存区内的任务
+		for (auto pTask : _tasksBuf)
+		{
+			pTask();
+		}
+		//清空任务
+		_tasks.clear();
+		// CELLLog::Info("CellTaskServer%d.OnRun\n", serverId);
 	}
 };
 #endif // !_CELL_TASK_H_

@@ -24,6 +24,7 @@
 #include"CELLTimestamp.hpp"
 #include"CELLTask.hpp"
 //
+#include "CELLLog.hpp"
 #include<stdio.h>
 
 //缓冲区最小单元大小

@@ -34,12 +34,12 @@ public:
 	// 当前对象结束时，相关资源关闭：线程和内存
 	void Close()
 	{
-		printf("CellServer start Close %d\n", _id);
+		CELLLog::Info("CellServer start Close %d\n", _id);
 		// 继续去关闭任务线程
 		_taskServer.Close();
 		// 控制线程函数结束循环
 		_thread.Close();
-		printf("CellServer end Close %d\n", _id);
+		CELLLog::Info("CellServer end Close %d\n", _id);
 
 
 	}
@@ -115,7 +115,7 @@ public:
 			int ret = select(_maxSock + 1, &fdRead, nullptr, nullptr, &t);
 			if (ret < 0) // select 出错
 			{
-				printf("select任务结束。\n");
+				CELLLog::Info("select任务结束。\n");
 				pThread->Exit();
 				// Close();
 				break;
@@ -123,12 +123,12 @@ public:
 			// 更新读事件和写事件集合
 			ReadData(fdRead);
 			WriteData(fdWrite);
-			// printf("CELLServer%d.OnRun.select: fdRead=%d,fdWrite=%d\n", _id, fdRead.fd_count, fdWrite.fd_count);
+			// CELLLog::Info("CELLServer%d.OnRun.select: fdRead=%d,fdWrite=%d\n", _id, fdRead.fd_count, fdWrite.fd_count);
 			// 心跳检测和定时发送
 			CheckTime(); // 检查所有与服务器相连的客户端的心跳计数是否超时
 		}
 		// 清空clients数组
-		printf("CELLServer %d.OnRun exit\n", _id);
+		CELLLog::Info("CELLServer %d.OnRun exit\n", _id);
 	}
 
 	// 心跳检测的同时，进行定时发送
@@ -147,7 +147,7 @@ public:
 				if (_pNetEvent)  // 客户端离开网络事件
 					_pNetEvent->OnNetLeave(iter->second);
 				_clients_change = true;
-				printf("断开与 socket=%d\n", iter->second->sockfd());
+				CELLLog::Info("断开与 socket=%d\n", iter->second->sockfd());
 				delete iter->second;
 				// CloseSocket(iter->first);  // 断开与客户端的连接
 				auto iterOld = iter;
@@ -217,14 +217,14 @@ public:
 						if (_pNetEvent)
 							_pNetEvent->OnNetLeave(iter->second);
 						_clients_change = true;
-						printf("断开与 socket=%d\n", iter->second->sockfd());
+						CELLLog::Info("断开与 socket=%d\n", iter->second->sockfd());
 						delete iter->second;
 						// closesocket(iter->first);
 						_clients.erase(iter);
 					}
 				}
 				else {
-					printf("error. if (iter != _clients.end())\n");
+					CELLLog::Info("error. if (iter != _clients.end())\n");
 				}
 			}
 #else
@@ -316,7 +316,7 @@ private:
 		// 清空_clients 数组
 		for (auto iter : _clients)
 		{
-			printf("CleanClients 断开与 socket=%d\n", iter.second->sockfd());
+			CELLLog::Info("CleanClients 断开与 socket=%d\n", iter.second->sockfd());
 			delete iter.second;
 		}
 		_clients.clear();  // map的clear会真正的删除内存
