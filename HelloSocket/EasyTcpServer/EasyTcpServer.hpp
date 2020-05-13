@@ -5,6 +5,7 @@
 #include"CELLClient.hpp"
 #include"CELLServer.hpp"
 #include"INetEvent.hpp"
+#include "CELLNetWork.hpp"
 
 #include<thread>
 #include<mutex>
@@ -43,19 +44,8 @@ public:
 	//初始化Socket
 	SOCKET InitSocket()
 	{
-#ifdef _WIN32
-		//启动Windows socket 2.x环境
-		WORD ver = MAKEWORD(2, 2);
-		WSADATA dat;
-		WSAStartup(ver, &dat);
-#else
-		/*if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
-			return -1;*/
-		// 在linux内，客户端断开可能会导致服务器断开，
-		// 是由于SIGPIPE 这个信号触发的，下面将该信号忽略。
-		signal(SIGPIPE, SIG_IGN);
-				
-#endif
+		// 初始化网络环境
+		CELLNetWork::Init();
 		if (INVALID_SOCKET != _sock)
 		{
 			CELLLog::Info("<socket=%d>关闭旧连接...\n", (int)_sock);
@@ -200,10 +190,7 @@ public:
 			std::vector<CellServer*>(_cellServers).swap(_cellServers);
 #ifdef _WIN32
 			//关闭套节字_sock
-			closesocket(_sock);
-			//------------
-			//清除Windows socket环境
-			WSACleanup();
+			closesocket(_sock); 
 #else
 			//关闭套节字_sock
 			close(_sock);
