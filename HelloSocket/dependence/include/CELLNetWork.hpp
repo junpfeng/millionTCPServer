@@ -1,33 +1,33 @@
-#ifndef _CELL_NET_WORK_HPP_
+ï»¿#ifndef _CELL_NET_WORK_HPP_
 #define _CELL_NET_WORK_HPP_
 #include "CELL.hpp"
 
-// µ¥ÀıÍøÂçÀà
+// å•ä¾‹ç½‘ç»œç±»
 class CELLNetWork
 {
 private:
 	CELLNetWork() {
 #ifdef _WIN32
-		//Æô¶¯Windows socket 2.x»·¾³
+		//å¯åŠ¨Windows socket 2.xç¯å¢ƒ
 		WORD ver = MAKEWORD(2, 2);
 		WSADATA dat;
 		WSAStartup(ver, &dat);
 #else
 		/*if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		return -1;*/
-		// ÔÚlinuxÄÚ£¬¿Í»§¶Ë¶Ï¿ª¿ÉÄÜ»áµ¼ÖÂ·şÎñÆ÷¶Ï¿ª£¬
-		// ÊÇÓÉÓÚSIGPIPE Õâ¸öĞÅºÅ´¥·¢µÄ£¬ÏÂÃæ½«¸ÃĞÅºÅºöÂÔ¡£
+		// åœ¨linuxå†…ï¼Œå®¢æˆ·ç«¯æ–­å¼€å¯èƒ½ä¼šå¯¼è‡´æœåŠ¡å™¨æ–­å¼€ï¼Œ
+		// æ˜¯ç”±äºSIGPIPE è¿™ä¸ªä¿¡å·è§¦å‘çš„ï¼Œä¸‹é¢å°†è¯¥ä¿¡å·å¿½ç•¥ã€‚
 		signal(SIGPIPE, SIG_IGN);
 
 #endif
 	}
 	~CELLNetWork() {
 #ifdef _WIN32
-		// ÇåÀí Windows socket »·¾³
+		// æ¸…ç† Windows socket ç¯å¢ƒ
 		WSACleanup();
 #endif
 	}
-	// ¿½±´¹¹Ôì
+	// æ‹·è´æ„é€ 
 	CELLNetWork(const CELLNetWork & other) {
 		;
 	}

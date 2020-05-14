@@ -3,7 +3,8 @@
 
 //SOCKET
 #ifdef _WIN32
-	#define FD_SETSIZE      256
+	// windows 下控制select的最大复用数量
+	#define FD_SETSIZE     10000
 	#define WIN32_LEAN_AND_MEAN
 	#define _WINSOCK_DEPRECATED_NO_WARNINGS
 	#include<windows.h>

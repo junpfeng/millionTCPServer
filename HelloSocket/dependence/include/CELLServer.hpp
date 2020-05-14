@@ -72,7 +72,7 @@ public:
 				_clients_change = true;
 			}
 
-			//如果没有需要处理的客户端，就跳过
+			// 如果没有需要处理的客户端，就跳过
 			if (_clients.empty())
 			{
 				std::chrono::milliseconds t(1);
@@ -81,12 +81,15 @@ public:
 				_oldTime = CELLTime::getNowInMilliSec();
 				continue;
 			}
+			// 心跳检测和定时发送
+			CheckTime(); // 检查所有与服务器相连的客户端的心跳计数是否超时
 
 			//伯克利套接字 BSD socket
 			fd_set fdRead;//描述符（socket） 集合
 						  //清理集合
 			fd_set fdWrite; // 可写事件集合
 
+			// 如果客户端集合发生了改变，就更新读事件集合
 			if (_clients_change)
 			{
 				FD_ZERO(&fdRead);
@@ -106,13 +109,39 @@ public:
 			else {
 				memcpy(&fdRead, &_fdRead_bak, sizeof(fd_set));
 			}
-			// 需要被写的套接字和被读的是同一批
-			memcpy(&fdWrite, &_fdRead_bak, sizeof(fd_set));
 
-			///nfds 是一个整数值 是指fd_set集合中所有描述符(socket)的范围，而不是数量
-			///既是所有文件描述符最大值+1 在Windows中这个参数可以写0
-			timeval t{ 0,1 };
-			int ret = select(_maxSock + 1, &fdRead, nullptr, nullptr, &t);
+			// 需要被写的套接字和被读的不一定是同一个
+			// memcpy(&fdWrite, &_fdRead_bak, sizeof(fd_set));
+			bool bNeedWrite = false;
+			FD_ZERO(&fdWrite);
+			for (auto iter : _clients) {
+				// 检测需要写的客户端
+				if (iter.second->needWrite()) {
+					// 一旦有一个客户端可写，即标志可写
+					bNeedWrite = true;
+					FD_SET(iter.second->sockfd(), &fdWrite);
+				}
+			}
+
+			// nfds 是一个整数值 是指fd_set集合中所有描述符(socket)的范围，而不是数量
+			// 既是所有文件描述符最大值+1 在Windows中这个参数可以写0
+			// 最长等待 1 ms
+
+			timeval t = { 0,1 };
+			int ret = 0;
+
+			// 如果发送缓冲区有数据，才会对发送事件进行监听
+			// 但是客户端与多个客户端连接，无法通过判断单个客户端是否可写
+			// 因此上面创建了一个标志位，一旦有一个客户端可写，即可写
+
+			if (bNeedWrite)
+			{
+				ret = select(_maxSock + 1, &fdRead, &fdWrite, nullptr, &t);
+			}
+			else {
+				ret = select(_maxSock + 1, &fdRead, nullptr, nullptr, &t);
+			}
+
 			if (ret < 0) // select 出错
 			{
 				CELLLog::Info("select任务结束。\n");
@@ -120,14 +149,15 @@ public:
 				// Close();
 				break;
 			}
+			else {
+				continue;
+			}
 			// 更新读事件和写事件集合
 			ReadData(fdRead);
 			WriteData(fdWrite);
 			// CELLLog::Info("CELLServer%d.OnRun.select: fdRead=%d,fdWrite=%d\n", _id, fdRead.fd_count, fdWrite.fd_count);
-			// 心跳检测和定时发送
-			CheckTime(); // 检查所有与服务器相连的客户端的心跳计数是否超时
 		}
-		// 清空clients数组
+		// 清空clients数组由析构函数完成
 		CELLLog::Info("CELLServer %d.OnRun exit\n", _id);
 	}
 
@@ -186,7 +216,8 @@ public:
 #else
 		// 之所以不讲++iter放在for循环里，是因为循环体内会产生iter失效的清空
 		for (auto iter = _clients.begin(); iter != _clients.end(); ) {
-			for (FD_ISSET(iter->second->sockfd(), &fdWrite)) {
+			// 
+			for (iter->second->needWrite() && FD_ISSET(iter->second->sockfd(), &fdWrite)) {
 				if (-1 == iter->second->SendDataReal()) {
 					OnClientLeave(iter->second);
 					auto iterOld = iter;

@@ -132,6 +132,9 @@ public:
 		return false;
 	}
 
+	bool needWrite() {
+		return _sendBuff.needWrite();
+	}
 
 private:
 	// socket fd_set  file desc set
