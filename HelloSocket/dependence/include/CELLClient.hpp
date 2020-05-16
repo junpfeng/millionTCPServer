@@ -71,9 +71,14 @@ public:
 	//发送数据
 	int SendData(netmsg_DataHeader* header)
 	{
+		return SendData((const char *)header, header->dataLength);
+	}
+	//发送数据
+	int SendData(const char * pData, int len)
+	{
 		// 将一个头包数据加入缓冲区
-		if (_sendBuff.push((const char*)header, header->dataLength)) {
-			return header->dataLength;
+		if (_sendBuff.push(pData, len)) {
+			return len;
 		}
 		return SOCKET_ERROR;
 	}

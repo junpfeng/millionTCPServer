@@ -149,17 +149,19 @@ public:
 	//接收数据 处理粘包 拆分包
 	int RecvData(SOCKET cSock)
 	{
-		// 5 接收数据
-		int nLen = _pClient->RecvData();
-		if (nLen > 0) {
-			//
-			while (_pClient->hasMsg()) {
-				// 处理队首数据
-				OnNetMsg(_pClient->front_msg());
-				// 弹出被处理过的数据
-				_pClient->pop_front_msg();
+		if (isRun()) {
+			// 5 接收数据
+			int nLen = _pClient->RecvData();
+			if (nLen > 0) {
+				//
+				while (_pClient->hasMsg()) {
+					// 处理队首数据
+					OnNetMsg(_pClient->front_msg());
+					// 弹出被处理过的数据
+					_pClient->pop_front_msg();
+				}
+				return nLen;
 			}
-			return nLen;
 		}
 	}
 
@@ -167,9 +169,13 @@ public:
 	virtual void OnNetMsg(netmsg_DataHeader* header) = 0;
 
 	//发送数据
-	int SendData(netmsg_DataHeader* header,int nLen)
+	int SendData(netmsg_DataHeader* header)
 	{
 		return _pClient->SendData(header);
+	}
+
+	int SendData(const char *pData, int len) {
+		return _pClient->SendData(pData, len);
 	}
 protected:
 	CellClient * _pClient = nullptr;
