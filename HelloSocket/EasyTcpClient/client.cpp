@@ -50,9 +50,9 @@ void cmdThread()
 }
 
 //客户端数量
-const int cCount = 400;
+const int cCount = 10000;
 //发送线程数量
-const int tCount = 4;
+const int tCount = 40;
 //锟酵伙拷锟斤拷锟斤拷锟斤拷
 EasyTcpClient* client[cCount];
 std::atomic_int sendCount(0);
@@ -74,7 +74,8 @@ void recvThread(int begin, int end)
 
 void sendThread(int id)
 {
-	printf("thread<%d>,start\n", id);
+	// printf("thread<%d>,start\n", id);
+	CELLLog::Info("thread<%d>, start\n", id);
 	//4锟斤拷锟竭筹拷 ID 1~4
 	int c = cCount / tCount;
 	int begin = (id - 1)*c;
@@ -93,7 +94,8 @@ void sendThread(int id)
 		client[n]->Connect("127.0.0.1", 4567);
 	}
 
-	printf("thread<%d>,Connect<begin=%d, end=%d>\n", id, begin, end);
+	// printf("thread<%d>,Connect<begin=%d, end=%d>\n", id, begin, end);
+	CELLLog::Info("thread<%d>,Connect<begin=%d, end=%d>\n", id, begin, end);
 
 	readyCount++;
 	while (readyCount < tCount)
@@ -132,11 +134,13 @@ void sendThread(int id)
 		delete client[n];
 	}
 
-	printf("thread<%d>,exit\n", id);
+	CELLLog::Info("thread<%d>,exit\n", id);
+	// printf("thread<%d>,exit\n", id);
 }
 
 int main()
 {
+	CELLLog::Instance().setLogPath("clientLog.txt", "w");
 	//锟斤拷锟斤拷UI锟竭筹拷
 	std::thread t1(cmdThread);
 	t1.detach();
@@ -155,7 +159,8 @@ int main()
 		auto t = tTime.getElapsedSecond();
 		if (t >= 1.0)
 		{
-			printf("thread<%d>,clients<%d>,time<%lf>,send<%d>\n",tCount, cCount,t,(int)(sendCount/ t));
+			// printf("thread<%d>,clients<%d>,time<%lf>,send<%d>\n",tCount, cCount,t,(int)(sendCount/ t));
+			CELLLog::Info("thread<%d>,clients<%d>,time<%lf>,send<%d>\n", tCount, cCount, t, (int)(sendCount / t));
 			sendCount = 0;
 			tTime.update();
 		}
@@ -166,6 +171,7 @@ int main()
 #endif
 	}
 
-	printf("锟斤拷锟剿筹拷锟斤拷\n");
+	// printf("客户端完成退出\n");
+	CELLLog::Info("客户端完成退出\n");
 	return 0;
 }

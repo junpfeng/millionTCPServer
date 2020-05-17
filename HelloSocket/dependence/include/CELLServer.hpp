@@ -13,11 +13,10 @@
 class CellServer
 {
 public:
-	// CellServer(SOCKET sock = INVALID_SOCKET)
 	CellServer(int id) :_id(id)
 	{
 		_pNetEvent = nullptr;
-		_taskServer.serverId = id;
+	// 	_taskServer.serverId = id;
 	}
 
 	~CellServer()
@@ -36,20 +35,13 @@ public:
 	{
 		CELLLog::Info("CellServer start Close %d\n", _id);
 		// 继续去关闭任务线程
-		_taskServer.Close();
+	// 	_taskServer.Close();
 		// 控制线程函数结束循环
 		_thread.Close();
 		CELLLog::Info("CellServer end Close %d\n", _id);
 
 
 	}
-	////是否工作中
-	//bool isRun()
-	//{
-	//	// 一旦 _sock == INVALID_SOCKET，该对象启动的线程就会退出。
-	//	// return _sock != INVALID_SOCKET;
-	//	return _isRun;
-	//}
 
 	// 线程入口函数
 	void OnRun(CELLThread * pThread)
@@ -109,7 +101,7 @@ public:
 			else {
 				memcpy(&fdRead, &_fdRead_bak, sizeof(fd_set));
 			}
-
+			
 			// 需要被写的套接字和被读的不一定是同一个
 			// memcpy(&fdWrite, &_fdRead_bak, sizeof(fd_set));
 			bool bNeedWrite = false;
@@ -133,7 +125,7 @@ public:
 			// 如果发送缓冲区有数据，才会对发送事件进行监听
 			// 但是客户端与多个客户端连接，无法通过判断单个客户端是否可写
 			// 因此上面创建了一个标志位，一旦有一个客户端可写，即可写
-
+			
 			if (bNeedWrite)
 			{
 				ret = select(_maxSock + 1, &fdRead, &fdWrite, nullptr, &t);
@@ -149,13 +141,10 @@ public:
 				// Close();
 				break;
 			}
-			else {
-				continue;
-			}
 			// 更新读事件和写事件集合
+			// CELLLog::Info("CELLServer.OnRun\n");
 			ReadData(fdRead);
 			WriteData(fdWrite);
-			// CELLLog::Info("CELLServer%d.OnRun.select: fdRead=%d,fdWrite=%d\n", _id, fdRead.fd_count, fdWrite.fd_count);
 		}
 		// 清空clients数组由析构函数完成
 		CELLLog::Info("CELLServer %d.OnRun exit\n", _id);
@@ -286,6 +275,7 @@ public:
 		if (nLen <= 0) {
 			return -1;
 		}
+		// CELLLog::Info("recv + 1 \n");
 		// 接收到网络消息计数+1
 		_pNetEvent->OnNetRecv(pClient);
 		// 将缓冲区内的数据全部处理完
@@ -316,7 +306,7 @@ public:
 	// 启动线程入口函数
 	void Start()
 	{
-		_taskServer.Start();
+	//  	_taskServer.Start();
 		_thread.Start(
 			// onCreate
 			nullptr,
@@ -335,13 +325,6 @@ public:
 		return _clients.size() + _clientsBuff.size();
 	}
 
-	//void addSendTask(CellClient* pClient, netmsg_DataHeader* header)
-	//{
-	//	_taskServer.addTask([pClient, header]() {
-	//		pClient->SendData(header);
-	//		delete header;
-	//	});
-	//}
 private:
 	void CleanClients() {
 		// 清空_clients 数组
@@ -376,7 +359,7 @@ private:
 	//网络事件对象
 	INetEvent* _pNetEvent = nullptr;
 	//
-	CellTaskServer _taskServer;
+	// CellTaskServer _taskServer;
 
 	//处理网络消息
 	//备份客户socket fd_set

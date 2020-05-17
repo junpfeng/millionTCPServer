@@ -1,31 +1,31 @@
-#ifndef _CELL_STREAM_HPP_
+﻿#ifndef _CELL_STREAM_HPP_
 #define _CELL_STREAM_HPP_
 
 #include"CELLLog.hpp"
 #include<cstdint>
 
-// �����ݵĶ�д��װΪ�ֽ���
-// ��c/c++�У��ֽ����Ĵ洢�� char ���͡�
-////// �ֽ���Э�飺
-// �����֣���/д����Ԫ�أ���/д���飨�ַ�����
-// ��/д����Ԫ��ʱ��
-// ��/д���飨�ַ�����ʱ����һ��Ԫ���Ǳ�ʾ����ַ����ĳ���
+// 将数据的读写封装为字节流
+// 在c/c++中，字节流的存储即 char 类型。
+////// 字节流协议：
+// 分两种：读/写单个元素；读/写数组（字符串）
+// 读/写单个元素时：
+// 读/写数组（字符串）时：第一个元素是表示这个字符串的长度
 class CELLStream
 {
 public:
-	// ���죺��pData��ַָ��_pBuff
+	// 构造：将pData地址指向_pBuff
 	CELLStream(char *pData, int nSize, bool bDelete = false) {
 		_nSize = nSize;
 		_pBuff = pData;
-		// �������ⲿ����ģ�Ĭ��������ⲿɾ��
+		// 由于是外部申请的，默认因此由外部删除
 		_bDelete = bDelete;
 	}
 
-	// ���죺ָ���ֽ����������Ĵ�С
+	// 构造：指定字节流缓冲区的大小
 	CELLStream(int nSize = 1024) {
 		_nSize = nSize;
 		_pBuff = new char[_nSize];
-		// �������룬�����ͷ�
+		// 类内申请，类内释放
 		_bDelete = true;
 	}
 
@@ -37,87 +37,88 @@ public:
 	}
 
 public:
-//// �ṩ�ⲿ��ȡ˽����Ϥ
+//// 提供外部读取私有熟悉
 	char * data() {
 		return _pBuff;
 	}
 
-	// �����ֽ����������ڴ�ŵ�Ԫ������
+	// 返回字节流缓冲区内存放的元素数量
 	int length() {
 		return _nWritePos;
 	}
-	// �ɶ�
+	// 可读
 	inline bool canRead(int n) {
 		return _nSize - _nReadPos >= n;
 	}
-	// ��д
+	// 可写
 	inline bool canWrite(int n) {
 		return _nSize - _nWritePos >= n;
 	}
 
-//// push����д�����ݣ���ô_nWritePos ����Ҫ����
-	// ÿд��n�����ݣ���д��ʼλ�ú���n
+//// push就是写入数据，那么_nWritePos 就需要后移
+	// 每写入n个数据，则写起始位置后移n
 	inline void push(int n) {
 		_nWritePos += n;
 	}
-//// pop���Ƕ������ݣ�_nReadPos ��Ӧ����
-	// ÿ����n�����ݣ������ʼλ�ú���n
+//// pop就是读出数据，_nReadPos 对应后移
+	// 每读入n个数据，则读起始位置后移n
 	inline void pop(int n) {
 		_nReadPos += n;
 	}
-	// ָ��д���λ��
+	// 指定写入的位置
 	inline void setWritePos(int n) {
 		_nWritePos = n;
 	}
 
 ///////Read
-	// ���ֽ�����������ȡһ�� T ���͵�����
-	// �� bOffset = false ֮�󣬾��ǲ���������λ�ã������ӾͿ����ض���ȡ��ͬλ�ã�
-	template<typename T>  // ��������
+	// 从字节流缓冲区读取一个 T 类型的数据
+	// 当 bOffset = false 之后，就是不调整读的位置（这样子就可以重读读取相同位置）
+	template<typename T>  // 引用类型
 	bool Read(T &  n, bool bOffset = true) {
-		// ��ȡ�Ļ���ԭ�������Ǵӽ�T�е����ݸ��Ƶ�_pBuf����
+		// 读取的基本原理，就是从将T中的数据复制到_pBuf中来
 		auto nLen = sizeof(T);
 
 		if (canRead(nLen)) {
-			// ����ȡ�����ݴ浽_pBuff �ϵ�_nReadPos����
+			// 将读取的数据存到_pBuff 上第_nReadPos后面
 			memcpy(&n, _pBuff + _nReadPos, nLen);
-			// Ĭ�ϻ����_nReadPos
+			// 默认会更新_nReadPos
 			if (bOffset) {
-				// ���� _nReadPos ��λ��Ϊ _nReadPos += nLen
+				// 更新 _nReadPos 的位置为 _nReadPos += nLen
 				pop(nLen);
 			} 
+			// 
 			return true;
 		}
 		CELLLog::Info("error, CELLStream::Read failed.");
 		return false;
 	}
 
-	// ֻ�������ı����ʼλ��
+	// 只读，不改变读起始位置
 	template<typename T>
 	bool onlyRead(T & n) {
 		return Read(n, false);
 	}
 
-	// ��ȡ len �� T ���͵����ݴ��뵽 pArr ��
+	// 读取 len 个 T 类型的数据存入到 pArr 中
 	template<typename T>
 	uint32_t ReadArray(T * pArr, uint32_t len) {
 		uint32_t len1 = 0;
-		// ��ȡ��1��uint32_t���͵����ݣ����ǲ�����_nReadpos
-		// ���������ô��Σ�len1Ϊ��ȡ�ĵ�һ�����ݵ�ֵ������Ǻ�WriteArrayƥ���
-		// ����WriteArrayд��ĵ�һ��Ԫ��������ĳ��ȣ���˶�ȡʱ���ȶ���һ����ʾ����ĳ���
+		// 读取第1个uint32_t类型的数据，但是不调整_nReadpos
+		// 由于是引用传参，len1为读取的第一个数据的值，这个是和WriteArray匹配的
+		// 由于WriteArray写入的第一个元素是数组的长度，因此读取时，先读第一个表示数组的长度
 		// 
 		Read(len1, false);
 		
 		if (len1 < len) {
-			// �ܳ���
+			// 总长度
 			auto nLen = len1 * sizeof(T);
-			// ����ɶ�
+			// 如果可读
 			if (canRead(nLen + sizeof(uint32_t))) {
-				// ����������ʼλ��
+				// 调整读的起始位置
 				pop(sizeof(uint32_t));
-				// ����
+				// 拷贝
 				memcpy(pArr, _pBuff + _nReadPos, nLen);
-				// ����������ʼλ��
+				// 调整读的起始位置
 				pop(nLen);
 				return len1;
 			}
@@ -189,13 +190,13 @@ public:
 //// Write
 	template<typename T>
 	bool Write(T n) {
-		// д�����͵Ĵ�С
+		// 写入类型的大小
 		auto nLen = sizeof(T);
-		// �Ƿ�д����
+		// 是否写的下
 		if (canWrite(nLen)) {
-			// д��
+			// 写入
 			memcpy(_pBuff + _nWritePos, &n, nLen);
-			// ����д��λ��
+			// 调整写入位置
 			push(nLen);
 			return true;
 		}
@@ -205,14 +206,14 @@ public:
 
 	template<typename T>
 	bool WriteArray(T * pData, uint32_t len) {
-		// ����д�����������T���ֽڳ���
+		// 计算写入数组的类型T的字节长度
 		auto nLen = sizeof(T)*len;
-		// �ж��Ƿ���д��
+		// 判断是否能写入
 		if (canWrite(nLen + sizeof(uint32_t))) {
-			// д�������Ԫ������
+			// 写入数组的元素数量
 			Write(len);
 			memcpy(_pBuff + _nWritePos, pData, nLen);
-			// ��д������ݣ�������������β��
+			// 将写入的数据，拷贝到缓冲区尾部
 			push(nLen);
 			return true;
 		}
@@ -247,18 +248,18 @@ public:
 //		return Write(n);
 //	}
 private:
-	// �ֽ������ݻ���������c/c++�У�ʹ�� char �������ֽ����ı���
-	// ��һ����ʵҪ��ϵ���� intel ʵϰ�е���Ŀ�еģ�Python ��c/c++֮��
-	// �������������ʱ�����ǻ����ֽ��� char ����
+	// 字节流数据缓冲区，在c/c++中，使用 char 来进行字节流的保存
+	// 这一点其实要联系到在 intel 实习中的项目中的，Python 到c/c++之间
+	// 传输参数等数据时，就是基于字节流 char 传输
 	char * _pBuff = nullptr;
-	// ���������ܴ�С
+	// 缓冲区的总大小
 	int _nSize = 0;
-//// _nWritePos �� _nReadPos ��ָͬ��һ���ڴ�
-	// ��¼д�����ݵ�λ��
+//// _nWritePos 和 _nReadPos 共同指向一块内存
+	// 记录写入数据的位置
 	int _nWritePos = 0;
-	// ��¼�Ѷ����ݵ�λ��
+	// 记录已读数据的位置
 	int _nReadPos = 0;
-	// ����������ָ������ü�����ֻ�������ֻ�п�ɾ�Ͳ���ɾ����
+	// 类似于智能指针的引用计数，只不过这个只有可删和不可删两种
 	bool _bDelete = true;
 };
 

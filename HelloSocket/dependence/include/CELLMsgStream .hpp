@@ -1,35 +1,35 @@
-#ifndef _CELL_MSG_STREAM_
+ï»¿#ifndef _CELL_MSG_STREAM_
 #define _CELL_MSG_STREAM_
 
 #include "CELLStream.hpp"
 #include "MessageHeader.hpp"
-/*  --------------- ×Ö½ÚÁ÷Ğ­Òé -------------------------
-	CELLStream ÊÇ×îµ×²ãµÄ×Ö½ÚÁ÷Àà£¬È«²¿»ùÓÚcµÄÊı¾İÀàĞÍÕ¹¿ªµÄ¡£
-	CELLReadStream ¼Ì³ĞCELLStream£¬·â×°Ò»¸ö·½·¨£ºgetNetCmd
-	CELLWriteStream ¼Ì³ĞCELLStream£¬·â×°Á½¸ö·½·¨£ºsetNetCmd ¡¢WriteString
-	×Ö½ÚÁ÷µÄÊ×¸ö uint16_t ´æ·ÅÁË×Ö½ÚÁ÷ÖĞÊı¾İµÄÊıÁ¿
+/*  --------------- å­—èŠ‚æµåè®® -------------------------
+	CELLStream æ˜¯æœ€åº•å±‚çš„å­—èŠ‚æµç±»ï¼Œå…¨éƒ¨åŸºäºcçš„æ•°æ®ç±»å‹å±•å¼€çš„ã€‚
+	CELLReadStream ç»§æ‰¿CELLStreamï¼Œå°è£…ä¸€ä¸ªæ–¹æ³•ï¼šgetNetCmd
+	CELLWriteStream ç»§æ‰¿CELLStreamï¼Œå°è£…ä¸¤ä¸ªæ–¹æ³•ï¼šsetNetCmd ã€WriteString
+	å­—èŠ‚æµçš„é¦–ä¸ª uint16_t å­˜æ”¾äº†å­—èŠ‚æµä¸­æ•°æ®çš„æ•°é‡
 */
 
 class CELLReadStream :public CELLStream {
 public:
-	// Ö±½Ó½« netmsg_DataHeader ×ªÎª×Ö½ÚÁ÷
+	// ç›´æ¥å°† netmsg_DataHeader è½¬ä¸ºå­—èŠ‚æµ
 	CELLReadStream(netmsg_DataHeader * header)
-		// Õâ¸ö¹¹Ôìº¯Êı£¬ÓÖµ÷ÓÃÏÂÃæµÄ¹¹Ôìº¯Êı
+		// è¿™ä¸ªæ„é€ å‡½æ•°ï¼Œåˆè°ƒç”¨ä¸‹é¢çš„æ„é€ å‡½æ•°
 		:CELLReadStream((char*)header, header->dataLength) {
 
 	}
-	// Ê¹ÓÃpData½øĞĞ³õÊ¼»¯Ò»¸öÁ÷¶ÔÏó
+	// ä½¿ç”¨pDataè¿›è¡Œåˆå§‹åŒ–ä¸€ä¸ªæµå¯¹è±¡
 	CELLReadStream(char * pData, int nSize, bool bDelete = false)
 		:CELLStream(pData, nSize, bDelete) {
-		// Ğ´ÈëÊı¾İĞèÒª¸üĞÂĞ´Î»ÖÃ
+		// å†™å…¥æ•°æ®éœ€è¦æ›´æ–°å†™ä½ç½®
 		push(nSize);
 	}
 
 	//
 	uint16_t getNetCmd() {
-		// ³õÊ¼»¯
+		// åˆå§‹åŒ–
 		uint16_t cmd = CMD_ERROR;
-		// ¶ÁÈ¡×Ö½ÚÁ÷»º³åÇøÊ×¸öÎ´¶ÁµÄÊı¾İ
+		// è¯»å–å­—èŠ‚æµç¼“å†²åŒºé¦–ä¸ªæœªè¯»çš„æ•°æ®
 		Read(cmd);
 		// 
 		return cmd;
@@ -38,10 +38,10 @@ public:
 
 class CELLWriteStream :public CELLStream {
 public:
-	// Ïò pData ÖĞĞ´ÈëÊı¾İ
+	// å‘ pData ä¸­å†™å…¥æ•°æ®
 	CELLWriteStream(char * pData, int nSize, bool bDelete = false)
 		:CELLStream(pData, nSize, bDelete) {
-		// Ä£°åº¯Êı¿ÉÒÔÉùÃ÷Ä£°å£¬»òÕß¸ù¾İ´«²Î×Ô¶¯ÅĞ¶ÏÀàĞÍ
+		// æ¨¡æ¿å‡½æ•°å¯ä»¥å£°æ˜æ¨¡æ¿ï¼Œæˆ–è€…æ ¹æ®ä¼ å‚è‡ªåŠ¨åˆ¤æ–­ç±»å‹
 		Write<uint16_t>(0);
 	}
 
@@ -65,15 +65,15 @@ public:
 		return WriteArray(str.c_str(), str.length());
 	}
 	
-	// ÎªÕû¸ö×Ö½ÚÁ÷»º³åÇøµÄÊ×¸ö uint16_t ÉÏĞ´Èë³¤¶È
+	// ä¸ºæ•´ä¸ªå­—èŠ‚æµç¼“å†²åŒºçš„é¦–ä¸ª uint16_t ä¸Šå†™å…¥é•¿åº¦
 	void finish() {
-		// »ñÈ¡ _nWritePos µÄÎ»ÖÃ£¨¼´»º³åÇøÄÚÔªËØÊıÁ¿£©
+		// è·å– _nWritePos çš„ä½ç½®ï¼ˆå³ç¼“å†²åŒºå†…å…ƒç´ æ•°é‡ï¼‰
 		int pos = length();
-		// Ğ´Î»ÖÃÇåÁã
+		// å†™ä½ç½®æ¸…é›¶
 		setWritePos(0);
-		// µÚÒ»¸öÎ»ÖÃ¼ÇÂ¼»º³åÇøµÄÄÚ´æ·ÅµÄÊı¾İÊıÁ¿
+		// ç¬¬ä¸€ä¸ªä½ç½®è®°å½•ç¼“å†²åŒºçš„å†…å­˜æ”¾çš„æ•°æ®æ•°é‡
 		Write<uint16_t>(pos);
-		// ¸´Ô­ Ğ´Î»ÖÃ 
+		// å¤åŸ å†™ä½ç½® 
 		setWritePos(pos);
 	}
 };

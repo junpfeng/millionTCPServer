@@ -1,26 +1,6 @@
 ﻿#include "EasyTcpServer.hpp"
 #include "CELLMsgStream .hpp"
 
-//
-//bool g_bRun = true;
-//void cmdThread()
-//{//
-//	while (true)
-//	{
-//		char cmdBuf[256] = {};
-//		scanf("%s", cmdBuf);
-//		if (0 == strcmp(cmdBuf, "exit"))
-//		{
-//			g_bRun = false;
-//			CELLLog::Info("退出cmdThread线程\n");
-//			break;
-//		}
-//		else {
-//			CELLLog::Info("不支持的命令。\n");
-//		}
-//	}
-//}
-
 class MyServer : public EasyTcpServer
 {
 public:
@@ -53,8 +33,7 @@ public:
 			//忽略判断用户密码是否正确的过程
 			netmsg_LoginR ret;
 			if (SOCKET_ERROR == pClient->SendData(&ret)) {
-				CELLLog::Info("SendFull");
-				// CELLLog::Info("<Socket=%d> Send Full\n", pClient->sockfd());
+				CELLLog::Info("socket = %d, SendFull\n", pClient->sockfd());
 			}
 			//netmsg_LoginR* ret = new netmsg_LoginR();
 			//pCellServer->addSendTask(pClient, ret);
@@ -62,10 +41,11 @@ public:
 		break;
 		case CMD_LOGOUT:
 		{
-			CELLReadStream r(header);
+			netmsg_Logout* logout = (netmsg_Logout*)header;
+			// CELLReadStream r(header);
 			//
 			// r.ReadInt16();
-			netmsg_Logout* logout = (netmsg_Logout*)header;
+			// netmsg_Logout* logout = (netmsg_Logout*)header;
 			//CELLLog::Info("收到客户端<Socket=%d>请求：CMD_LOGOUT,数据长度：%d,userName=%s \n", cSock, logout->dataLength, logout->userName);
 			//忽略判断用户密码是否正确的过程
 			//netmsg_LogoutR ret;
@@ -81,8 +61,6 @@ public:
 		default:
 		{
 			CELLLog::Info("<socket=%d>收到未定义消息,数据长度：%d\n", pClient->sockfd(), header->dataLength);
-			//netmsg_DataHeader ret;
-			//SendData(cSock, &ret);
 		}
 		break;
 		}
@@ -99,11 +77,8 @@ int main()
 	server.Bind(nullptr, 4567);
 	server.Listen(5);
 	server.Start(4);  // 收发客户端的服务器对象线程
-
-	////启动UI线程
-	//std::thread t1(cmdThread);
-	//t1.detach();
-
+	
+	// 循环检测输入
 	while (true)
 	{
 		char cmdBuf[256] = {};

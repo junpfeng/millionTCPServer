@@ -174,7 +174,7 @@ public:
 		return _pClient->SendData(header);
 	}
 
-	int SendData(const char *pData, int len) {
+	int SendData(const char *pData, const int len) {
 		return _pClient->SendData(pData, len);
 	}
 protected:
