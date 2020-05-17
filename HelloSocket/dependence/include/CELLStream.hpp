@@ -4,28 +4,28 @@
 #include"CELLLog.hpp"
 #include<cstdint>
 
-// ½«Êý¾ÝµÄ¶ÁÐ´·â×°Îª×Ö½ÚÁ÷
-// ÔÚc/c++ÖÐ£¬×Ö½ÚÁ÷µÄ´æ´¢¼´ char ÀàÐÍ¡£
-////// ×Ö½ÚÁ÷Ð­Òé£º
-// ·ÖÁ½ÖÖ£º¶Á/Ð´µ¥¸öÔªËØ£»¶Á/Ð´Êý×é£¨×Ö·û´®£©
-// ¶Á/Ð´µ¥¸öÔªËØÊ±£º
-// ¶Á/Ð´Êý×é£¨×Ö·û´®£©Ê±£ºµÚÒ»¸öÔªËØÊÇ±íÊ¾Õâ¸ö×Ö·û´®µÄ³¤¶È
+// ï¿½ï¿½ï¿½ï¿½ï¿½ÝµÄ¶ï¿½Ð´ï¿½ï¿½×°Îªï¿½Ö½ï¿½ï¿½ï¿½
+// ï¿½ï¿½c/c++ï¿½Ð£ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½Ä´æ´¢ï¿½ï¿½ char ï¿½ï¿½ï¿½Í¡ï¿½
+////// ï¿½Ö½ï¿½ï¿½ï¿½Ð­ï¿½é£º
+// ï¿½ï¿½ï¿½ï¿½ï¿½Ö£ï¿½ï¿½ï¿½/Ð´ï¿½ï¿½ï¿½ï¿½Ôªï¿½Ø£ï¿½ï¿½ï¿½/Ð´ï¿½ï¿½ï¿½é£¨ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½
+// ï¿½ï¿½/Ð´ï¿½ï¿½ï¿½ï¿½Ôªï¿½ï¿½Ê±ï¿½ï¿½
+// ï¿½ï¿½/Ð´ï¿½ï¿½ï¿½é£¨ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Ôªï¿½ï¿½ï¿½Ç±ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½Ä³ï¿½ï¿½ï¿½
 class CELLStream
 {
 public:
-	// ¹¹Ôì£º½«pDataµØÖ·Ö¸Ïò_pBuff
+	// ï¿½ï¿½ï¿½ì£ºï¿½ï¿½pDataï¿½ï¿½Ö·Ö¸ï¿½ï¿½_pBuff
 	CELLStream(char *pData, int nSize, bool bDelete = false) {
 		_nSize = nSize;
 		_pBuff = pData;
-		// ÓÉÓÚÊÇÍâ²¿ÉêÇëµÄ£¬Ä¬ÈÏÒò´ËÓÉÍâ²¿É¾³ý
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â²¿ï¿½ï¿½ï¿½ï¿½Ä£ï¿½Ä¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â²¿É¾ï¿½ï¿½
 		_bDelete = bDelete;
 	}
 
-	// ¹¹Ôì£ºÖ¸¶¨×Ö½ÚÁ÷»º³åÇøµÄ´óÐ¡
+	// ï¿½ï¿½ï¿½ì£ºÖ¸ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä´ï¿½Ð¡
 	CELLStream(int nSize = 1024) {
 		_nSize = nSize;
 		_pBuff = new char[_nSize];
-		// ÀàÄÚÉêÇë£¬ÀàÄÚÊÍ·Å
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë£¬ï¿½ï¿½ï¿½ï¿½ï¿½Í·ï¿½
 		_bDelete = true;
 	}
 
@@ -37,90 +37,87 @@ public:
 	}
 
 public:
-//// Ìá¹©Íâ²¿¶ÁÈ¡Ë½ÓÐÊìÏ¤
+//// ï¿½á¹©ï¿½â²¿ï¿½ï¿½È¡Ë½ï¿½ï¿½ï¿½ï¿½Ï¤
 	char * data() {
 		return _pBuff;
 	}
 
-	// ·µ»Ø×Ö½ÚÁ÷»º³åÇøÄÚ´æ·ÅµÄÔªËØÊýÁ¿
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú´ï¿½Åµï¿½Ôªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	int length() {
 		return _nWritePos;
 	}
-	// ¿É¶Á
+	// ï¿½É¶ï¿½
 	inline bool canRead(int n) {
 		return _nSize - _nReadPos >= n;
 	}
-	// ¿ÉÐ´
+	// ï¿½ï¿½Ð´
 	inline bool canWrite(int n) {
 		return _nSize - _nWritePos >= n;
 	}
 
-//// push¾ÍÊÇÐ´ÈëÊý¾Ý£¬ÄÇÃ´_nWritePos ¾ÍÐèÒªºóÒÆ
-	// Ã¿Ð´Èën¸öÊý¾Ý£¬ÔòÐ´ÆðÊ¼Î»ÖÃºóÒÆn
+//// pushï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½ï¿½Ã´_nWritePos ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½
+	// Ã¿Ð´ï¿½ï¿½nï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½ï¿½Ð´ï¿½ï¿½Ê¼Î»ï¿½Ãºï¿½ï¿½ï¿½n
 	inline void push(int n) {
 		_nWritePos += n;
 	}
-//// pop¾ÍÊÇ¶Á³öÊý¾Ý£¬_nReadPos ¶ÔÓ¦ºóÒÆ
-	// Ã¿¶ÁÈën¸öÊý¾Ý£¬Ôò¶ÁÆðÊ¼Î»ÖÃºóÒÆn
+//// popï¿½ï¿½ï¿½Ç¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½_nReadPos ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½
+	// Ã¿ï¿½ï¿½ï¿½ï¿½nï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼Î»ï¿½Ãºï¿½ï¿½ï¿½n
 	inline void pop(int n) {
 		_nReadPos += n;
 	}
-	// Ö¸¶¨Ð´ÈëµÄÎ»ÖÃ
+	// Ö¸ï¿½ï¿½Ð´ï¿½ï¿½ï¿½Î»ï¿½ï¿½
 	inline void setWritePos(int n) {
 		_nWritePos = n;
 	}
 
 ///////Read
-	// ´Ó×Ö½ÚÁ÷»º³åÇø¶ÁÈ¡Ò»¸ö T ÀàÐÍµÄÊý¾Ý
-	// µ± bOffset = false Ö®ºó£¬¾ÍÊÇ²»µ÷Õû¶ÁµÄÎ»ÖÃ£¨ÕâÑù×Ó¾Í¿ÉÒÔÖØ¶Á¶ÁÈ¡ÏàÍ¬Î»ÖÃ£©
-	template<typename T>  // ÒýÓÃÀàÐÍ
+	// ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¡Ò»ï¿½ï¿½ T ï¿½ï¿½ï¿½Íµï¿½ï¿½ï¿½ï¿½ï¿½
+	// ï¿½ï¿½ bOffset = false Ö®ï¿½ó£¬¾ï¿½ï¿½Ç²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½Ã£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¾Í¿ï¿½ï¿½ï¿½ï¿½Ø¶ï¿½ï¿½ï¿½È¡ï¿½ï¿½Í¬Î»ï¿½Ã£ï¿½
+	template<typename T>  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	bool Read(T &  n, bool bOffset = true) {
-		// ¶ÁÈ¡µÄ»ù±¾Ô­Àí£¬¾ÍÊÇ´Ó½«TÖÐµÄÊý¾Ý¸´ÖÆµ½_pBufÖÐÀ´
+		// ï¿½ï¿½È¡ï¿½Ä»ï¿½ï¿½ï¿½Ô­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç´Ó½ï¿½Tï¿½Ðµï¿½ï¿½ï¿½ï¿½Ý¸ï¿½ï¿½Æµï¿½_pBufï¿½ï¿½ï¿½ï¿½
 		auto nLen = sizeof(T);
 
 		if (canRead(nLen)) {
-			// ½«¶ÁÈ¡µÄÊý¾Ý´æµ½_pBuff ÉÏµÚ_nReadPosºóÃæ
+			// ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½Ý´æµ½_pBuff ï¿½Ïµï¿½_nReadPosï¿½ï¿½ï¿½ï¿½
 			memcpy(&n, _pBuff + _nReadPos, nLen);
-			// Ä¬ÈÏ»á¸üÐÂ_nReadPos
+			// Ä¬ï¿½Ï»ï¿½ï¿½ï¿½ï¿½_nReadPos
 			if (bOffset) {
-				// ¸üÐÂ _nReadPos µÄÎ»ÖÃÎª _nReadPos += nLen
+				// ï¿½ï¿½ï¿½ï¿½ _nReadPos ï¿½ï¿½Î»ï¿½ï¿½Îª _nReadPos += nLen
 				pop(nLen);
-				return;
 			} 
-			// 
-			CELLLog::Info("error, CELLStream::Read failed.");
 			return true;
 		}
 		CELLLog::Info("error, CELLStream::Read failed.");
 		return false;
 	}
 
-	// Ö»¶Á£¬²»¸Ä±ä¶ÁÆðÊ¼Î»ÖÃ
+	// Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½ï¿½Ê¼Î»ï¿½ï¿½
 	template<typename T>
 	bool onlyRead(T & n) {
 		return Read(n, false);
 	}
 
-	// ¶ÁÈ¡ len ¸ö T ÀàÐÍµÄÊý¾Ý´æÈëµ½ pArr ÖÐ
+	// ï¿½ï¿½È¡ len ï¿½ï¿½ T ï¿½ï¿½ï¿½Íµï¿½ï¿½ï¿½ï¿½Ý´ï¿½ï¿½ëµ½ pArr ï¿½ï¿½
 	template<typename T>
 	uint32_t ReadArray(T * pArr, uint32_t len) {
 		uint32_t len1 = 0;
-		// ¶ÁÈ¡µÚ1¸öuint32_tÀàÐÍµÄÊý¾Ý£¬µ«ÊÇ²»µ÷Õû_nReadpos
-		// ÓÉÓÚÊÇÒýÓÃ´«²Î£¬len1Îª¶ÁÈ¡µÄµÚÒ»¸öÊý¾ÝµÄÖµ£¬Õâ¸öÊÇºÍWriteArrayÆ¥ÅäµÄ
-		// ÓÉÓÚWriteArrayÐ´ÈëµÄµÚÒ»¸öÔªËØÊÇÊý×éµÄ³¤¶È£¬Òò´Ë¶ÁÈ¡Ê±£¬ÏÈ¶ÁµÚÒ»¸ö±íÊ¾Êý×éµÄ³¤¶È
+		// ï¿½ï¿½È¡ï¿½ï¿½1ï¿½ï¿½uint32_tï¿½ï¿½ï¿½Íµï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½ï¿½ï¿½Ç²ï¿½ï¿½ï¿½ï¿½ï¿½_nReadpos
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã´ï¿½ï¿½Î£ï¿½len1Îªï¿½ï¿½È¡ï¿½Äµï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ýµï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Çºï¿½WriteArrayÆ¥ï¿½ï¿½ï¿½
+		// ï¿½ï¿½ï¿½ï¿½WriteArrayÐ´ï¿½ï¿½Äµï¿½Ò»ï¿½ï¿½Ôªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä³ï¿½ï¿½È£ï¿½ï¿½ï¿½Ë¶ï¿½È¡Ê±ï¿½ï¿½ï¿½È¶ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½Ä³ï¿½ï¿½ï¿½
 		// 
 		Read(len1, false);
 		
 		if (len1 < len) {
-			// ×Ü³¤¶È
+			// ï¿½Ü³ï¿½ï¿½ï¿½
 			auto nLen = len1 * sizeof(T);
-			// Èç¹û¿É¶Á
+			// ï¿½ï¿½ï¿½ï¿½É¶ï¿½
 			if (canRead(nLen + sizeof(uint32_t))) {
-				// µ÷Õû¶ÁµÄÆðÊ¼Î»ÖÃ
+				// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼Î»ï¿½ï¿½
 				pop(sizeof(uint32_t));
-				// ¿½±´
+				// ï¿½ï¿½ï¿½ï¿½
 				memcpy(pArr, _pBuff + _nReadPos, nLen);
-				// µ÷Õû¶ÁµÄÆðÊ¼Î»ÖÃ
+				// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼Î»ï¿½ï¿½
 				pop(nLen);
 				return len1;
 			}
@@ -192,13 +189,13 @@ public:
 //// Write
 	template<typename T>
 	bool Write(T n) {
-		// Ð´ÈëÀàÐÍµÄ´óÐ¡
+		// Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ÍµÄ´ï¿½Ð¡
 		auto nLen = sizeof(T);
-		// ÊÇ·ñÐ´µÄÏÂ
+		// ï¿½Ç·ï¿½Ð´ï¿½ï¿½ï¿½ï¿½
 		if (canWrite(nLen)) {
-			// Ð´Èë
+			// Ð´ï¿½ï¿½
 			memcpy(_pBuff + _nWritePos, &n, nLen);
-			// µ÷ÕûÐ´ÈëÎ»ÖÃ
+			// ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½Î»ï¿½ï¿½
 			push(nLen);
 			return true;
 		}
@@ -208,14 +205,14 @@ public:
 
 	template<typename T>
 	bool WriteArray(T * pData, uint32_t len) {
-		// ¼ÆËãÐ´ÈëÊý×éµÄÀàÐÍTµÄ×Ö½Ú³¤¶È
+		// ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Tï¿½ï¿½ï¿½Ö½Ú³ï¿½ï¿½ï¿½
 		auto nLen = sizeof(T)*len;
-		// ÅÐ¶ÏÊÇ·ñÄÜÐ´Èë
+		// ï¿½Ð¶ï¿½ï¿½Ç·ï¿½ï¿½ï¿½Ð´ï¿½ï¿½
 		if (canWrite(nLen + sizeof(uint32_t))) {
-			// Ð´ÈëÊý×éµÄÔªËØÊýÁ¿
+			// Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ôªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			Write(len);
 			memcpy(_pBuff + _nWritePos, pData, nLen);
-			// ½«Ð´ÈëµÄÊý¾Ý£¬¿½±´µ½»º³åÇøÎ²²¿
+			// ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î²ï¿½ï¿½
 			push(nLen);
 			return true;
 		}
@@ -250,18 +247,18 @@ public:
 //		return Write(n);
 //	}
 private:
-	// ×Ö½ÚÁ÷Êý¾Ý»º³åÇø£¬ÔÚc/c++ÖÐ£¬Ê¹ÓÃ char À´½øÐÐ×Ö½ÚÁ÷µÄ±£´æ
-	// ÕâÒ»µãÆäÊµÒªÁªÏµµ½ÔÚ intel ÊµÏ°ÖÐµÄÏîÄ¿ÖÐµÄ£¬Python µ½c/c++Ö®¼ä
-	// ´«Êä²ÎÊýµÈÊý¾ÝÊ±£¬¾ÍÊÇ»ùÓÚ×Ö½ÚÁ÷ char ´«Êä
+	// ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½c/c++ï¿½Ð£ï¿½Ê¹ï¿½ï¿½ char ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½
+	// ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ÊµÒªï¿½ï¿½Ïµï¿½ï¿½ï¿½ï¿½ intel ÊµÏ°ï¿½Ðµï¿½ï¿½ï¿½Ä¿ï¿½ÐµÄ£ï¿½Python ï¿½ï¿½c/c++Ö®ï¿½ï¿½
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Ç»ï¿½ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ char ï¿½ï¿½ï¿½ï¿½
 	char * _pBuff = nullptr;
-	// »º³åÇøµÄ×Ü´óÐ¡
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü´ï¿½Ð¡
 	int _nSize = 0;
-//// _nWritePos ºÍ _nReadPos ¹²Í¬Ö¸ÏòÒ»¿éÄÚ´æ
-	// ¼ÇÂ¼Ð´ÈëÊý¾ÝµÄÎ»ÖÃ
+//// _nWritePos ï¿½ï¿½ _nReadPos ï¿½ï¿½Í¬Ö¸ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ú´ï¿½
+	// ï¿½ï¿½Â¼Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ýµï¿½Î»ï¿½ï¿½
 	int _nWritePos = 0;
-	// ¼ÇÂ¼ÒÑ¶ÁÊý¾ÝµÄÎ»ÖÃ
+	// ï¿½ï¿½Â¼ï¿½Ñ¶ï¿½ï¿½ï¿½ï¿½Ýµï¿½Î»ï¿½ï¿½
 	int _nReadPos = 0;
-	// ÀàËÆÓÚÖÇÄÜÖ¸ÕëµÄÒýÓÃ¼ÆÊý£¬Ö»²»¹ýÕâ¸öÖ»ÓÐ¿ÉÉ¾ºÍ²»¿ÉÉ¾Á½ÖÖ
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¼ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½Ð¿ï¿½É¾ï¿½Í²ï¿½ï¿½ï¿½É¾ï¿½ï¿½ï¿½ï¿½
 	bool _bDelete = true;
 };
 

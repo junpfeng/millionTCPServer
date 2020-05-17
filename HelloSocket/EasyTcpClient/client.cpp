@@ -50,9 +50,9 @@ void cmdThread()
 }
 
 //客户端数量
-const int cCount = 40000;
+const int cCount = 400;
 //发送线程数量
-const int tCount = 40;
+const int tCount = 4;
 //锟酵伙拷锟斤拷锟斤拷锟斤拷
 EasyTcpClient* client[cCount];
 std::atomic_int sendCount(0);
@@ -105,8 +105,9 @@ void sendThread(int id)
 	std::thread t1(recvThread, begin, end);
 	t1.detach();
 	//
-	netmsg_Login login[10];
-	for (int n = 0; n < 10; n++)
+	const int num_login = 1;
+	netmsg_Login login[num_login];
+	for (int n = 0; n < num_login; n++)
 	{
 		strcpy(login[n].userName, "xinyeox");
 		strcpy(login[n].PassWord, "123");
@@ -116,7 +117,7 @@ void sendThread(int id)
 	{
 		for (int n = begin; n < end; n++)
 		{
-			if (SOCKET_ERROR != client[n]->SendData(login, nLen))
+			if (SOCKET_ERROR != client[n]->SendData(login))
 			{
 				sendCount++;
 			}

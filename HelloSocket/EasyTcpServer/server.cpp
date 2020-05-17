@@ -64,8 +64,8 @@ public:
 		{
 			CELLReadStream r(header);
 			//
-			r.ReadInt16();
-			// netmsg_Logout* logout = (netmsg_Logout*)header;
+			// r.ReadInt16();
+			netmsg_Logout* logout = (netmsg_Logout*)header;
 			//CELLLog::Info("收到客户端<Socket=%d>请求：CMD_LOGOUT,数据长度：%d,userName=%s \n", cSock, logout->dataLength, logout->userName);
 			//忽略判断用户密码是否正确的过程
 			//netmsg_LogoutR ret;

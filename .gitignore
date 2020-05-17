@@ -11,3 +11,5 @@ HelloMemory
 *.gch
 *.tmp
 *.txt
+server
+client

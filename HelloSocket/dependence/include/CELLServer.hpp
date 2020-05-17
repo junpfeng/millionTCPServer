@@ -217,7 +217,7 @@ public:
 		// 之所以不讲++iter放在for循环里，是因为循环体内会产生iter失效的清空
 		for (auto iter = _clients.begin(); iter != _clients.end(); ) {
 			// 
-			for (iter->second->needWrite() && FD_ISSET(iter->second->sockfd(), &fdWrite)) {
+			if(iter->second->needWrite() && FD_ISSET(iter->second->sockfd(), &fdWrite)) {
 				if (-1 == iter->second->SendDataReal()) {
 					OnClientLeave(iter->second);
 					auto iterOld = iter;
