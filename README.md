@@ -1,7 +1,5 @@
 # millionTCPServer
-![language](https://img.shields.io/badge/C++-11-green.svg )![platform](https://img.shields.io/badge/platform-Linux/Windows-blue.svg )![complier](https://img.shields.io/badge/complier-gcc 7.3.1-red.svg )![status](https://img.shields.io/badge/status-updating-yellow.svg )    
-
-[TOC]
+![language](https://img.shields.io/badge/C++-11-green.svg )![platform](https://img.shields.io/badge/platform-Linux/Windows-blue.svg )![complier](https://img.shields.io/badge/complier-gcc7.3.1-red.svg )![status](https://img.shields.io/badge/status-updating-yellow.svg )    
 
 ## Introduce
 
@@ -35,7 +33,7 @@ The purpose of the project is to build a `TCP` server that supports millions of 
 
 ## Structure
 
-![image-20200518110515851](image/Architecture_1.png)
+![structure_1](https://github.com/junpfeng/millionTCPServer/blob/master/image/Architecture_1.png)
 
 ## Feature
 
